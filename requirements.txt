@@ -2,4 +2,5 @@ streamlit
 pandas
 plotly
 python-docx
+supabase
 openpyxl
