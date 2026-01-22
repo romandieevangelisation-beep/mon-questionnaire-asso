@@ -4,9 +4,10 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
 from docx import Document
+from docx.shared import Inches
 from io import BytesIO
 import json
-from supabase import create_client, Client
+from supabase import create_client
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="Espace Clinique - Questionnaire YSQ-L3", layout="wide")
@@ -19,7 +20,7 @@ def init_connection():
         key = st.secrets["SUPABASE_KEY"]
         return create_client(url, key)
     except KeyError:
-        st.error("Erreur : Les secrets Supabase ne sont pas configurés.")
+        st.error("Erreur critique : Les secrets Supabase ne sont pas configurés dans Streamlit Cloud.")
         return None
 
 supabase = init_connection()
@@ -49,29 +50,119 @@ def load_all_patients():
         st.error(f"Erreur de chargement : {e}")
         return pd.DataFrame()
 
-# --- INTERPRÉTATIONS BIBLIQUES ---
-INTERPRETATIONS_BIBLIQUES = {
-    "ED": {"clinique": "Carence affective : Sentiment que vos besoins d'amour ne seront jamais comblés.", "verset": "Psaume 27:10 - 'Car mon père et ma mère m'abandonnent, mais l'Éternel me recueillera.'", "conseil": "Dieu est le Père parfait qui comble votre vide affectif."},
-    "AB": {"clinique": "Abandon : Peur constante que les gens vous quittent.", "verset": "Hébreux 13:5 - 'Je ne te délaisserai point, et je ne t'abandonnerai point.'", "conseil": "L'attachement à Dieu est le seul lien indestructible."},
-    "MA": {"clinique": "Méfiance / Abus : Peur d'être utilisé ou maltraité.", "verset": "Proverbes 3:5 - 'Confie-toi en l'Éternel de tout ton cœur.'", "conseil": "Dieu est votre bouclier et votre sécurité ultime."},
-    "SI": {"clinique": "Isolement social : Sentiment d'être différent ou exclu.", "verset": "Éphésiens 2:19 - 'Vous êtes concitoyens des saints, gens de la maison de Dieu.'", "conseil": "Vous avez une place choisie dans la famille de Dieu."},
-    "DS": {"clinique": "Imperfection / Honte : Sentiment d'être indigne d'être aimé.", "verset": "Psaume 139:14 - 'Je te loue de ce que je suis une créature si merveilleuse.'", "conseil": "Votre valeur est scellée par l'amour inconditionnel du Créateur."},
-    "FA": {"clinique": "Échec : Croyance que l'on est moins doué que les autres.", "verset": "Philippiens 4:13 - 'Je puis tout par celui qui me fortifie.'", "conseil": "Dieu définit votre succès par votre identité en Lui, pas par vos performances."},
-    "DI": {"clinique": "Dépendance : Incapacité à gérer le quotidien seul.", "verset": "2 Timothée 1:7 - 'Dieu nous a donné un esprit de force, d'amour et de sagesse.'", "conseil": "Le Saint-Esprit est votre guide pour chaque décision."},
-    "VU": {"clinique": "Vulnérabilité : Peur d'une catastrophe imminente.", "verset": "Ésaïe 41:10 - 'Ne crains rien, car je suis avec toi.'", "conseil": "La paix de Dieu garde votre cœur contre l'anxiété du futur."},
-    "EU": {"clinique": "Fusion : Perte d'identité au profit d'un proche.", "verset": "Galates 1:10 - 'Est-ce la faveur des hommes que je recherche, ou celle de Dieu ?'", "conseil": "Vous êtes une création unique, distincte et libre en Christ."},
-    "SB": {"clinique": "Assujettissement : Soumission par peur de la colère.", "verset": "Galates 5:1 - 'C'est pour la liberté que Christ nous a affranchis.'", "conseil": "Vous n'êtes plus esclave de la peur, mais fils/fille de Dieu."},
-    "SS": {"clinique": "Abnégation : Sacrifice de soi excessif par culpabilité.", "verset": "Matthieu 22:39 - 'Tu aimeras ton prochain comme toi-même.'", "conseil": "Prendre soin de vous honorer le temple du Saint-Esprit."},
-    "EI": {"clinique": "Inhibition émotionnelle : Peur d'exprimer ses sentiments.", "verset": "Jean 8:32 - 'La vérité vous affranchira.'", "conseil": "Dieu accueille votre authenticité et vos émotions les plus profondes."},
-    "US": {"clinique": "Exigences élevées : Perfectionnisme et pression constante.", "verset": "Matthieu 11:28 - 'Venez à moi, vous tous qui êtes fatigués, et je vous donnerai du repos.'", "conseil": "La grâce remplace la performance. Vous êtes assez en Christ."},
-    "ET": {"clinique": "Droits personnels : Sentiment de supériorité.", "verset": "Philippiens 2:3 - 'Que l'humilité vous fasse regarder les autres comme au-dessus de vous.'", "conseil": "La vraie grandeur réside dans le service et l'humilité de cœur."},
-    "IS": {"clinique": "Contrôle de soi insuffisant : Impulsivité.", "verset": "Galates 5:23 - 'Le fruit de l'Esprit, c'est... la maîtrise de soi.'", "conseil": "L'Esprit Saint fortifie votre volonté pour des choix sains."},
-    "AS": {"clinique": "Recherche d'approbation : Besoin d'être admiré.", "verset": "1 Samuel 16:7 - 'L'Éternel regarde au cœur.'", "conseil": "Le seul regard qui définit votre valeur est celui de votre Père céleste."},
-    "NP": {"clinique": "Négativité / Pessimisme : Focus sur le pire.", "verset": "Philippiens 4:8 - 'Que tout ce qui est digne d'approbation soit l'objet de vos pensées.'", "conseil": "La foi transforme votre regard pour voir l'espérance en toute chose."},
-    "PU": {"clinique": "Punition : Désir de condamner les erreurs.", "verset": "Romains 8:1 - 'Il n'y a plus aucune condamnation pour ceux qui sont en Jésus-Christ.'", "conseil": "La grâce a payé la dette. Pratiquez le pardon envers vous et les autres."}
+# --- DÉFINITIONS EXPERTES & BIBLIQUES ---
+INTERPRETATIONS_EXPERTES = {
+    "ED": {
+        "titre": "Carence Affective",
+        "desc": "Ce schéma réfère au sentiment que vos besoins émotionnels de sécurité, d'affection et d'empathie ne seront jamais comblés par les autres. Vous pouvez vous sentir invisible ou émotionnellement seul(e).",
+        "verset": "Psaume 27:10",
+        "biblique": "Même si les humains faillissent, Dieu est le Père parfait qui comble votre vide affectif."
+    },
+    "AB": {
+        "titre": "Abandon / Instabilité",
+        "desc": "La perception que vos proches sont instables et qu'ils finiront inévitablement par vous quitter (par décès, départ ou rejet). Cela crée une anxiété chronique dans les relations.",
+        "verset": "Hébreux 13:5",
+        "biblique": "L'alliance avec Dieu est éternelle. Il a promis : 'Je ne te délaisserai point'."
+    },
+    "MA": {
+        "titre": "Méfiance / Abus",
+        "desc": "L'attente que les autres vont vous blesser, vous abuser, vous humilier ou vous mentir. Vous percevez le monde comme dangereux et les gens comme malveillants.",
+        "verset": "Psaume 56:4",
+        "biblique": "Dieu est votre refuge et votre bouclier. En Lui, la confiance peut être restaurée sans crainte."
+    },
+    "SI": {
+        "titre": "Isolement Social",
+        "desc": "Le sentiment d'être différent des autres, de ne pas appartenir à la 'famille humaine' ou à un groupe. Sentiment de solitude sociale chronique.",
+        "verset": "Éphésiens 2:19",
+        "biblique": "Vous n'êtes plus des étrangers, mais concitoyens des saints et membres de la famille de Dieu."
+    },
+    "DS": {
+        "titre": "Imperfection / Honte",
+        "desc": "Le sentiment d'être intérieurement défectueux, mauvais, ou sans valeur. Crainte que si les autres voient qui vous êtes vraiment, ils vous rejetteront.",
+        "verset": "Psaume 139:14",
+        "biblique": "Vous êtes une créature merveilleuse. Votre valeur dépend de l'amour de Dieu, pas de vos performances."
+    },
+    "FA": {
+        "titre": "Échec",
+        "desc": "La croyance que vous avez échoué, que vous échouerez inévitablement, ou que vous êtes fondamentalement moins compétent que vos pairs.",
+        "verset": "Philippiens 4:13",
+        "biblique": "Le succès selon Dieu n'est pas la réussite sociale, mais la fidélité. Sa force s'accomplit dans votre faiblesse."
+    },
+    "DI": {
+        "titre": "Dépendance / Incompétence",
+        "desc": "La conviction d'être incapable de gérer vos responsabilités quotidiennes sans une aide considérable d'autrui. Sentiment d'impuissance.",
+        "verset": "2 Timothée 1:7",
+        "biblique": "Dieu ne nous a pas donné un esprit de timidité, mais de force, d'amour et de sagesse."
+    },
+    "VU": {
+        "titre": "Vulnérabilité au danger",
+        "desc": "Peur exagérée qu'une catastrophe (médicale, financière, criminelle) puisse survenir à tout moment et que vous ne pourrez pas y faire face.",
+        "verset": "Psaume 91:4",
+        "biblique": "Il vous couvrira de ses plumes. Sa fidélité est une armure et un bouclier contre la peur."
+    },
+    "EU": {
+        "titre": "Fusion / Personnalité Atrophiée",
+        "desc": "Attachement émotionnel excessif à des proches, au détriment de votre propre individualité. Sentiment de ne pas pouvoir exister ou être heureux sans l'autre.",
+        "verset": "Galates 5:1",
+        "biblique": "C'est pour la liberté que Christ nous a affranchis. Vous avez une identité propre en Lui."
+    },
+    "SB": {
+        "titre": "Assujettissement",
+        "desc": "Soumission excessive au contrôle des autres pour éviter la colère, les représailles ou l'abandon. Vous supprimez vos propres besoins.",
+        "verset": "Actes 5:29",
+        "biblique": "Il faut obéir à Dieu plutôt qu'aux hommes. Vous êtes serviteur de Dieu, pas esclave des hommes."
+    },
+    "SS": {
+        "titre": "Abnégation",
+        "desc": "Concentration excessive sur les besoins des autres au détriment des vôtres, souvent pour éviter de se sentir coupable. Le syndrome du 'Sauveur'.",
+        "verset": "Matthieu 22:39",
+        "biblique": "Tu aimeras ton prochain 'comme toi-même'. Prendre soin de soi est nécessaire pour bien servir."
+    },
+    "EI": {
+        "titre": "Inhibition Émotionnelle",
+        "desc": "Inhibition excessive des actions, des sentiments ou de la communication spontanée, souvent pour éviter la désapprobation ou la honte.",
+        "verset": "Jean 8:36",
+        "biblique": "Si le Fils vous affranchit, vous serez réellement libres. Libres de ressentir et d'être vrais."
+    },
+    "US": {
+        "titre": "Exigences Élevées",
+        "desc": "La croyance que l'on doit s'efforcer d'atteindre des normes internes très élevées de comportement et de performance, souvent pour éviter la critique.",
+        "verset": "Matthieu 11:28",
+        "biblique": "Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos."
+    },
+    "ET": {
+        "titre": "Droits Personnels / Grandeur",
+        "desc": "La croyance que vous êtes supérieur aux autres, que vous avez des droits spéciaux, ou que vous n'avez pas à suivre les règles de réciprocité sociale.",
+        "verset": "Philippiens 2:3",
+        "biblique": "Que l'humilité vous fasse regarder les autres comme étant au-dessus de vous-mêmes."
+    },
+    "IS": {
+        "titre": "Contrôle de soi insuffisant",
+        "desc": "Difficulté persistante à exercer un contrôle de soi suffisant et une tolérance à la frustration pour atteindre ses objectifs personnels.",
+        "verset": "Galates 5:22",
+        "biblique": "Le fruit de l'Esprit est... la maîtrise de soi."
+    },
+    "AS": {
+        "titre": "Recherche d'approbation",
+        "desc": "Recherche excessive de l'attention, de l'estime et de l'approbation des autres, au détriment du développement d'un sentiment de soi sûr et authentique.",
+        "verset": "1 Thessaloniciens 2:4",
+        "biblique": "Nous parlons, non pour plaire aux hommes, mais pour plaire à Dieu qui sonde nos cœurs."
+    },
+    "NP": {
+        "titre": "Négativité / Pessimisme",
+        "desc": "Focalisation constante sur les aspects négatifs de la vie (douleur, mort, perte, conflit) tout en minimisant les aspects positifs.",
+        "verset": "Philippiens 4:8",
+        "biblique": "Que tout ce qui est vrai, honorable, juste... soit l'objet de vos pensées."
+    },
+    "PU": {
+        "titre": "Punition",
+        "desc": "La croyance que les gens (y compris soi-même) doivent être sévèrement punis pour leurs erreurs. Tendance à la colère, à l'intolérance et à l'impatience.",
+        "verset": "Romains 8:1",
+        "biblique": "Il n'y a donc maintenant aucune condamnation pour ceux qui sont en Jésus-Christ."
+    }
 }
 
-# --- TEXTES COMPLETS DES 232 QUESTIONS (YSQ-L3 ORIGINAL) ---
+# --- LES 232 QUESTIONS (STANDARD CLINIQUE YSQ-L3) ---
 YSQ_QUESTIONS = {
     "ED : Carence affective": {
         1: "Je n'ai pas eu quelqu'un pour prendre soin de moi, partager sa vie avec moi, ou se soucier réellement de tout ce qui m'arrivait.",
@@ -88,9 +179,9 @@ YSQ_QUESTIONS = {
         10: "Je m'inquiète beaucoup à l'idée que les gens que j'aime vont mourir ou me quitter.",
         11: "Je m'accroche aux gens parce que j'ai peur qu'ils me quittent.",
         12: "Je crains que les gens que j'aime ne trouvent quelqu'un d'autre qu'ils préféreront et ne m'abandonnent.",
-        13: "Les gens qui m'ont été proches ont toujours été imprévisibles ; un moment ils étaient disponibles et gentils, le moment d'après ils étaient fâchés, bouleversés, centrés sur eux-mêmes, ou bien ils s'en allaient.",
+        13: "Les gens qui m'ont été proches ont toujours été imprévisibles ; un moment disponibles, le moment d'après fâchés ou absents.",
         14: "J'ai tellement besoin des autres que je m'inquiète de les perdre.",
-        15: "Je me sens désespéré(e) ou très malheureux(se) quand quelqu'un que j'aime s'éloigne de moi, même brièvement.",
+        15: "Je me sens désespéré(e) quand quelqu'un que j'aime s'éloigne de moi, même brièvement.",
         16: "Je tombe amoureux(se) de gens qui ne peuvent pas s'engager avec moi de façon stable.",
         17: "La plupart des gens sont imprévisibles concernant leurs sentiments envers moi.",
         18: "En fin de compte, je serai seul(e).",
@@ -342,26 +433,22 @@ YSQ_QUESTIONS = {
         232: "Je ne m'accorde pas le droit à l'erreur."
     }
 }
-# --- NAVIGATION ---
-# Barre latérale pour choisir le mode (Patient ou Thérapeute)
+
+# --- INTERFACE ---
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=80)
 st.sidebar.title("Navigation")
 mode = st.sidebar.radio("Aller vers :", ["Espace Patient", "Espace Thérapeute"])
 
-# ==============================================================================
-# 1. ESPACE PATIENT (PUBLIC)
-# ==============================================================================
+# 1. ESPACE PATIENT
 if mode == "Espace Patient":
     st.header("🌱 Questionnaire des Schémas (YSQ-L3)")
     st.markdown("---")
     
-    # --- CONSIGNES AU PATIENT (VERSION ORIGINALE) ---
     st.info("""
-    ### 📋 Instructions
+    ### 📋 Instructions Importantes
     
-    Vous trouverez ci-dessous des affirmations que l'on peut utiliser pour se décrire.
-    Veuillez lire chaque phrase et décider dans quelle mesure elle vous décrit bien.
-    
-    Il n'y a pas de "bonnes" ou de "mauvaises" réponses. Répondez aussi sincèrement que possible selon ce que vous ressentez **la plupart du temps** dans votre vie.
+    Ce questionnaire contient **232 affirmations**. Veuillez lire chacune d'elles et évaluer à quel point elle vous décrit bien.
+    Il n'y a pas de bonne ou de mauvaise réponse. Soyez le plus sincère possible.
     
     **Échelle de réponse :**
     * **1** = Entièrement **FAUX** de moi
@@ -371,8 +458,7 @@ if mode == "Espace Patient":
     * **5** = L'essentiel est **VRAI** de moi
     * **6** = Me décrit **PARFAITEMENT**
     """)
-    st.markdown("---")
-
+    
     with st.form("form_patient", clear_on_submit=True):
         c1, c2 = st.columns(2)
         nom = c1.text_input("Votre Nom et Prénom")
@@ -381,20 +467,14 @@ if mode == "Espace Patient":
         reponses = {}
         st.divider()
         
-        # Boucle d'affichage des 232 questions
         for domaine, q_dict in YSQ_QUESTIONS.items():
-            # Titre de section plus joli (ex: ED : Carence affective)
-            st.subheader(f"🔹 {domaine}") 
+            st.subheader(f"🔹 {domaine}")
             for q_num, q_text in q_dict.items():
-                # Affichage question + slider
                 st.write(f"**{q_num}.** {q_text}")
                 reponses[f"Q{q_num}"] = st.slider(
-                    f"Réponse Q{q_num}", 
-                    min_value=1, max_value=6, value=1, 
-                    key=f"q_{q_num}", 
-                    label_visibility="collapsed"
+                    f"Rép. Q{q_num}", 1, 6, 1, key=f"q_{q_num}", label_visibility="collapsed"
                 )
-            st.markdown("---") # Séparateur entre les schémas
+            st.markdown("---")
         
         submitted = st.form_submit_button("Envoyer mes résultats au thérapeute", type="primary")
         
@@ -402,61 +482,48 @@ if mode == "Espace Patient":
             if not nom:
                 st.warning("⚠️ Merci d'indiquer votre nom avant d'envoyer.")
             else:
-                with st.spinner("Envoi en cours..."):
-                    success = save_patient_data(nom, email, reponses)
-                    if success:
-                        st.success("✅ Vos réponses ont été bien reçues ! Vous pouvez fermer cette page.")
+                with st.spinner("Envoi sécurisé en cours..."):
+                    if save_patient_data(nom, email, reponses):
+                        st.success("✅ Vos réponses ont été bien reçues ! Merci.")
                         st.balloons()
 
-# ==============================================================================
-# 2. ESPACE THÉRAPEUTE (PROTÉGÉ)
-# ==============================================================================
+# 2. ESPACE THÉRAPEUTE
 elif mode == "Espace Thérapeute":
     st.sidebar.divider()
     pwd_input = st.sidebar.text_input("Mot de passe Admin", type="password")
     
-    # On vérifie si le mot de passe correspond à celui dans les secrets
     if "ADMIN_PASSWORD" in st.secrets and pwd_input == st.secrets["ADMIN_PASSWORD"]:
-        st.header("🔒 Tableau de Bord Clinique")
+        st.header("🔒 Tableau de Bord Clinique Expert")
         
         df = load_all_patients()
         
         if df.empty:
-            st.info("Aucun questionnaire reçu pour le moment.")
+            st.info("Aucun dossier pour le moment.")
         else:
-            # Liste des patients (Tableau interactif)
-            st.markdown("### Dossiers Patients")
             st.dataframe(df[["created_at", "nom", "email"]], use_container_width=True)
-            
             st.divider()
-            st.markdown("### Analyse d'un dossier")
             patient_select = st.selectbox("Sélectionner un patient :", df["nom"].unique())
             
-            if st.button("Lancer l'Analyse Complète"):
-                # Récupération des données
+            if st.button("📊 Générer le Bilan Complet"):
                 patient_data = df[df["nom"] == patient_select].iloc[0]
                 reponses_dict = json.loads(patient_data["reponses_json"])
                 
-                # --- CALCUL DES RÉSULTATS ---
+                # Calculs
                 resultats = []
                 active_schemas_codes = []
                 
                 for domaine, q_dict in YSQ_QUESTIONS.items():
                     code = domaine.split(" : ")[0]
                     nom_sch = domaine.split(" : ")[1]
-                    
-                    # On va chercher les réponses Q1, Q2... 
                     scores = [reponses_dict.get(f"Q{k}", 1) for k in q_dict.keys()]
                     
                     if scores:
                         moy = sum(scores) / len(scores)
-                        sev = len([x for x in scores if x >= 5]) # Nombre de 5 et 6
+                        sev = len([x for x in scores if x >= 5])
                         pct = (sev / len(scores)) * 100
-                        
                         etoile = "⭐" if sev > 0 else ""
                         if etoile: active_schemas_codes.append(code)
                         
-                        # Code couleur pour le tableau
                         niveau = "🟢 Faible"
                         if moy > 3.5: niveau = "🔴 IMPORTANT"
                         elif moy >= 2.5: niveau = "🟡 Moyen"
@@ -465,52 +532,44 @@ elif mode == "Espace Thérapeute":
                             "Code": code,
                             "Schéma": f"{nom_sch} {etoile}",
                             "Moyenne": round(moy, 2),
-                            "% Sévérité (5-6)": f"{round(pct, 1)}%",
+                            "% Sévérité": f"{round(pct, 1)}%",
                             "Niveau": niveau
                         })
                 
                 df_res = pd.DataFrame(resultats)
                 
-                # --- AFFICHAGE DASHBOARD ---
-                c1, c2 = st.columns([1, 1])
-                
+                # Affichage
+                c1, c2 = st.columns(2)
                 with c1:
-                    st.write("#### Résultats Chiffrés")
-                    st.dataframe(df_res, height=600)
-                
+                    st.table(df_res)
                 with c2:
-                    st.write("#### Profil Radar")
-                    # Graphique Radar
-                    fig = px.line_polar(df_res, r='Moyenne', theta='Code', line_close=True, range_r=[0,6])
-                    fig.update_traces(fill='toself', line_color='red')
-                    st.plotly_chart(fig, use_container_width=True)
+                    fig_radar = px.line_polar(df_res, r='Moyenne', theta='Code', line_close=True, range_r=[0,6])
+                    fig_radar.update_traces(fill='toself', line_color='red')
+                    st.plotly_chart(fig_radar)
                     
-                    # Graphique Barres
-                    st.write("#### Intensité par Schéma")
-                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', color='Moyenne', range_y=[0,6], color_continuous_scale='Reds')
-                    st.plotly_chart(fig_bar, use_container_width=True)
+                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color='Moyenne', color_continuous_scale='Reds')
+                    st.plotly_chart(fig_bar)
 
-                # --- SECTION SPIRITUELLE ---
-                st.markdown("---")
-                st.header("🕊️ Pistes Spirituelles (Schémas activés)")
-                
-                active_interpretations = []
-                for code in active_schemas_codes:
-                    info = INTERPRETATIONS_BIBLIQUES.get(code)
-                    if info:
-                        with st.expander(f"📖 {code} - {info['clinique']}"):
-                            st.info(f"**Verset :** {info['verset']}")
-                            st.write(f"**Conseil :** {info['conseil']}")
-                        active_interpretations.append((code, info))
-
-                # --- GÉNÉRATION WORD ---
-                def generate_docx():
+                # Export Word avec Graphiques
+                def generate_word_expert():
                     doc = Document()
-                    doc.add_heading(f"Bilan YSQ-L3 : {patient_data['nom']}", 0)
+                    doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
                     doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
                     
-                    # Tableau des scores
-                    doc.add_heading('1. Profil des Schémas', level=1)
+                    # 1. Graphiques (Tentative d'insertion)
+                    doc.add_heading('1. Visualisation', level=1)
+                    try:
+                        # Radar
+                        img_radar = fig_radar.to_image(format="png")
+                        doc.add_picture(BytesIO(img_radar), width=Inches(5))
+                        # Barres
+                        img_bar = fig_bar.to_image(format="png")
+                        doc.add_picture(BytesIO(img_bar), width=Inches(5))
+                    except:
+                        doc.add_paragraph("[Note: Installez 'kaleido' dans requirements.txt pour voir les graphiques ici]")
+
+                    # 2. Tableau
+                    doc.add_heading('2. Scores Détaillés', level=1)
                     table = doc.add_table(rows=1, cols=4)
                     table.style = 'Table Grid'
                     hdr = table.rows[0].cells
@@ -518,45 +577,39 @@ elif mode == "Espace Thérapeute":
                     hdr[1].text = "Schéma"
                     hdr[2].text = "Moyenne"
                     hdr[3].text = "Niveau"
-                    
                     for _, r in df_res.iterrows():
                         row = table.add_row().cells
                         row[0].text = str(r["Code"])
                         row[1].text = str(r["Schéma"])
                         row[2].text = str(r["Moyenne"])
                         row[3].text = str(r["Niveau"])
-                    
-                    # Interprétation Spirituelle
-                    if active_interpretations:
-                        doc.add_heading('2. Accompagnement Spirituel', level=1)
-                        doc.add_paragraph("Pour les schémas marqués d'une étoile (⭐) ou ayant une moyenne élevée :")
-                        
-                        for code, info in active_interpretations:
-                            p = doc.add_paragraph()
-                            p.add_run(f"Schéma {code} : ").bold = True
-                            p.add_run(info['clinique'])
-                            
-                            p2 = doc.add_paragraph()
-                            p2.add_run(f"Verset : {info['verset']}").italic = True
-                            
-                            doc.add_paragraph(f"Conseil : {info['conseil']}")
-                            doc.add_paragraph("-" * 20)
-                            
-                    # Prière
-                    doc.add_heading('3. Prière de Libération', level=1)
-                    schemas_str = ", ".join([x[0] for x in active_interpretations])
-                    doc.add_paragraph(f"Seigneur, je te remets ces fardeaux liés aux schémas de {schemas_str}. Je renonce aux mensonges de l'ennemi sur mon identité. Je reçois ta vérité et ta guérison. Amen.")
+
+                    # 3. Analyse Expert & Spirituelle
+                    doc.add_heading('3. Analyse Clinique & Spirituelle', level=1)
+                    if active_schemas_codes:
+                        for code in active_schemas_codes:
+                            info = INTERPRETATIONS_EXPERTES.get(code)
+                            if info:
+                                p = doc.add_paragraph()
+                                runner = p.add_run(f"{info['titre']} ({code})")
+                                runner.bold = True
+                                runner.font.size = Inches(0.16)
+                                
+                                doc.add_paragraph(f"Analyse : {info['desc']}")
+                                doc.add_paragraph(f"Promesse Biblique : '{info['biblique']}' ({info['verset']})").italic = True
+                                doc.add_paragraph("-" * 30)
+                    else:
+                        doc.add_paragraph("Aucun schéma significatif détecté.")
 
                     out = BytesIO()
                     doc.save(out)
                     return out.getvalue()
 
-                # Bouton Download
                 st.download_button(
-                    label="📥 Télécharger le Rapport Word Complet",
-                    data=generate_docx(),
-                    file_name=f"Bilan_{patient_data['nom']}.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    "📥 Télécharger le Rapport Expert (Word)",
+                    generate_word_expert(),
+                    f"Bilan_Expert_{patient_data['nom']}.docx",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
 
     elif pwd_input:
