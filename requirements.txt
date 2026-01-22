@@ -3,4 +3,5 @@ pandas
 plotly
 python-docx
 supabase
-kaleido
+kaleido==0.2.1
+openpyxl
