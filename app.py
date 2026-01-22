@@ -7,6 +7,7 @@ from docx import Document
 from docx.shared import Inches
 from io import BytesIO
 import json
+import re
 from supabase import create_client
 
 # --- CONFIGURATION DE LA PAGE ---
@@ -20,13 +21,18 @@ def init_connection():
         key = st.secrets["SUPABASE_KEY"]
         return create_client(url, key)
     except KeyError:
-        st.error("Erreur critique : Les secrets Supabase ne sont pas configurés dans Streamlit Cloud.")
+        st.error("Erreur critique : Les secrets Supabase ne sont pas configurés correctement.")
         return None
 
 supabase = init_connection()
 
-# --- FONCTIONS DE GESTION DES DONNÉES ---
+# --- FONCTIONS UTILITAIRES ---
+def is_valid_email(email):
+    """Vérifie si l'email a un format valide"""
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
 def save_patient_data(nom, email, reponses_dict):
+    """Enregistre les données dans Supabase"""
     if not supabase: return False
     data = {
         "nom": nom,
@@ -38,13 +44,13 @@ def save_patient_data(nom, email, reponses_dict):
         supabase.table("patients_ysq").insert(data).execute()
         return True
     except Exception as e:
-        st.error(f"Erreur d'enregistrement : {e}")
+        st.error(f"Erreur d'enregistrement technique : {e}")
         return False
 
 def load_all_patients():
+    """Charge la liste des patients"""
     if not supabase: return pd.DataFrame()
     try:
-        # On récupère aussi l'ID pour pouvoir supprimer
         response = supabase.table("patients_ysq").select("*").order("created_at", desc=True).execute()
         return pd.DataFrame(response.data)
     except Exception as e:
@@ -52,7 +58,7 @@ def load_all_patients():
         return pd.DataFrame()
 
 def delete_patient(patient_id):
-    """Supprime un patient de la base de données via son ID"""
+    """Supprime un patient"""
     if not supabase: return False
     try:
         supabase.table("patients_ysq").delete().eq("id", patient_id).execute()
@@ -462,14 +468,17 @@ if mode == "Espace Patient":
     Il n'y a pas de bonne ou de mauvaise réponse. Soyez le plus sincère possible.
     
     **Échelle de réponse :**
-    * **1** = Entièrement **FAUX** de moi
-    * **2** = L'essentiel est **FAUX** de moi
-    * **3** = Plutôt **VRAI** que faux
-    * **4** = Modérément **VRAI** de moi
-    * **5** = L'essentiel est **VRAI** de moi
-    * **6** = Me décrit **PARFAITEMENT**
+    * **1** = ❌ Entièrement **FAUX** de moi
+    * **2** = 🟧 L'essentiel est **FAUX** de moi
+    * **3** = 🟨 Plutôt **VRAI** que faux
+    * **4** = 🟦 Modérément **VRAI** de moi
+    * **5** = 🟦 L'essentiel est **VRAI** de moi
+    * **6** = ✅ Me décrit **PARFAITEMENT**
     """)
     
+    # Options pour les boutons (pills)
+    options_reponse = [1, 2, 3, 4, 5, 6]
+
     with st.form("form_patient", clear_on_submit=False):
         c1, c2 = st.columns(2)
         nom = c1.text_input("Votre Nom et Prénom *")
@@ -478,25 +487,39 @@ if mode == "Espace Patient":
         reponses = {}
         st.divider()
         
-        # MODIFICATION : Titres neutres pour éviter le biais
+        # Affichage avec Titres Neutres (Série 1, Série 2...) pour le patient
         for i, (domaine, q_dict) in enumerate(YSQ_QUESTIONS.items()):
-            st.markdown(f"#### 📝 Série {i+1}") 
-            for q_num, q_text in q_dict.items():
-                st.write(f"**{q_num}.** {q_text}")
-                reponses[f"Q{q_num}"] = st.slider(
-                    f"Rép. Q{q_num}", 1, 6, 1, key=f"q_{q_num}", label_visibility="collapsed"
-                )
-            st.markdown("---")
+            with st.container():
+                st.markdown(f"#### 📝 Série {i+1}")
+                for q_num, q_text in q_dict.items():
+                    st.write(f"**{q_num}.** {q_text}")
+                    # Utilisation des boutons "pills" pour la rapidité
+                    reponses[f"Q{q_num}"] = st.pills(
+                        f"Choix Q{q_num}",
+                        options=options_reponse,
+                        selection_mode="single",
+                        label_visibility="collapsed",
+                        key=f"q_{q_num}"
+                    )
+                    st.caption("") # Petit espace
+            st.divider()
         
         submitted = st.form_submit_button("Envoyer mes résultats au thérapeute", type="primary")
         
         if submitted:
+            # Vérification des réponses manquantes (st.pills retourne None si vide)
+            questions_manquantes = [k for k, v in reponses.items() if v is None]
+            
             if not nom or not email:
-                st.error("⚠️ Oups ! Vous avez oublié de remplir votre **Nom** ou votre **Email**. Veuillez remonter en haut pour compléter ces champs, vos réponses ont été conservées.")
+                st.error("⚠️ Oups ! Vous avez oublié de remplir votre **Nom** ou votre **Email** en haut du formulaire.")
+            elif not is_valid_email(email):
+                st.error("⚠️ L'adresse email indiquée ne semble pas valide.")
+            elif len(questions_manquantes) > 0:
+                st.warning(f"⚠️ Il manque des réponses à **{len(questions_manquantes)} questions**. Merci de vérifier les séries incomplètes.")
             else:
                 with st.spinner("Envoi sécurisé en cours..."):
                     if save_patient_data(nom, email, reponses):
-                        st.success("✅ Vos réponses ont été bien reçues et enregistrées ! Merci.")
+                        st.success("✅ Vos réponses ont été bien reçues et enregistrées ! Merci pour votre temps.")
                         st.balloons()
 
 # 2. ESPACE THÉRAPEUTE
@@ -545,7 +568,8 @@ elif mode == "Espace Thérapeute":
                 for domaine, q_dict in YSQ_QUESTIONS.items():
                     code = domaine.split(" : ")[0]
                     nom_sch = domaine.split(" : ")[1]
-                    scores = [reponses_dict.get(f"Q{k}", 1) for k in q_dict.keys()]
+                    # Récupération des scores (gestion du None par sécurité = 1)
+                    scores = [reponses_dict.get(f"Q{k}", 1) or 1 for k in q_dict.keys()]
                     
                     if scores:
                         moy = sum(scores) / len(scores)
