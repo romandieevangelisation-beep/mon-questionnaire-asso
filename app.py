@@ -44,121 +44,132 @@ def save_patient_data(nom, email, reponses_dict):
 def load_all_patients():
     if not supabase: return pd.DataFrame()
     try:
+        # On récupère aussi l'ID pour pouvoir supprimer
         response = supabase.table("patients_ysq").select("*").order("created_at", desc=True).execute()
         return pd.DataFrame(response.data)
     except Exception as e:
         st.error(f"Erreur de chargement : {e}")
         return pd.DataFrame()
 
-# --- DÉFINITIONS EXPERTES & BIBLIQUES ---
+def delete_patient(patient_id):
+    """Supprime un patient de la base de données via son ID"""
+    if not supabase: return False
+    try:
+        supabase.table("patients_ysq").delete().eq("id", patient_id).execute()
+        return True
+    except Exception as e:
+        st.error(f"Erreur de suppression : {e}")
+        return False
+
+# --- DÉFINITIONS EXPERTES & PASTORALES ---
 INTERPRETATIONS_EXPERTES = {
     "ED": {
         "titre": "Carence Affective",
-        "desc": "Ce schéma réfère au sentiment que vos besoins émotionnels de sécurité, d'affection et d'empathie ne seront jamais comblés par les autres. Vous pouvez vous sentir invisible ou émotionnellement seul(e).",
+        "desc": "Sentiment profond que vos besoins de sécurité, d'affection et d'écoute ne seront jamais comblés. Vous avez appris à survivre sans demander, pensant que personne ne se soucie vraiment de vous.",
         "verset": "Psaume 27:10",
-        "biblique": "Même si les humains faillissent, Dieu est le Père parfait qui comble votre vide affectif."
+        "biblique": "Si les figures parentales humaines ont pu faillir, Dieu se révèle comme le Père parfait qui 'recueille'. La guérison passe par l'apprentissage de la réception : oser croire que vous êtes digne de soin et laisser le Père céleste combler ce vide émotionnel par Son Esprit."
     },
     "AB": {
         "titre": "Abandon / Instabilité",
-        "desc": "La perception que vos proches sont instables et qu'ils finiront inévitablement par vous quitter (par décès, départ ou rejet). Cela crée une anxiété chronique dans les relations.",
+        "desc": "Peur viscérale que les relations soient fragiles et que vous finissiez seul(e). Cela crée une anxiété chronique et une tendance à 's'agripper' aux autres ou à tester leur fidélité.",
         "verset": "Hébreux 13:5",
-        "biblique": "L'alliance avec Dieu est éternelle. Il a promis : 'Je ne te délaisserai point'."
+        "biblique": "L'insécurité relationnelle se soigne par la certitude de l'Alliance. Dieu a promis : 'Je ne te délaisserai point'. Contrairement aux humains, Sa fidélité est immuable. Ancrez votre sécurité dans ce lien indestructible pour apaiser votre anxiété relationnelle."
     },
     "MA": {
         "titre": "Méfiance / Abus",
-        "desc": "L'attente que les autres vont vous blesser, vous abuser, vous humilier ou vous mentir. Vous percevez le monde comme dangereux et les gens comme malveillants.",
-        "verset": "Psaume 56:4",
-        "biblique": "Dieu est votre refuge et votre bouclier. En Lui, la confiance peut être restaurée sans crainte."
+        "desc": "Attente que les autres vont intentionnellement vous blesser, vous manipuler ou vous trahir. Vous restez sur vos gardes, percevant le monde comme un lieu hostile.",
+        "verset": "Psaume 56:4-5",
+        "biblique": "Dieu est le seul refuge totalement sûr. La guérison spirituelle implique de déposer les armes de la défensive aux pieds de Christ, pour réapprendre progressivement le discernement (sagesse) plutôt que la suspicion (peur), sous Sa protection."
     },
     "SI": {
         "titre": "Isolement Social",
-        "desc": "Le sentiment d'être différent des autres, de ne pas appartenir à la 'famille humaine' ou à un groupe. Sentiment de solitude sociale chronique.",
+        "desc": "Sentiment de ne pas appartenir, d'être différent, 'à part' du reste de l'humanité. Une solitude qui n'est pas physique, mais existentielle.",
         "verset": "Éphésiens 2:19",
-        "biblique": "Vous n'êtes plus des étrangers, mais concitoyens des saints et membres de la famille de Dieu."
+        "biblique": "En Christ, vous n'êtes plus étranger. Vous avez une citoyenneté céleste et une place légitime dans la famille de Dieu. L'Église est le lieu où votre différence est accueillie comme une richesse membre du Corps, et non comme une anomalie."
     },
     "DS": {
         "titre": "Imperfection / Honte",
-        "desc": "Le sentiment d'être intérieurement défectueux, mauvais, ou sans valeur. Crainte que si les autres voient qui vous êtes vraiment, ils vous rejetteront.",
-        "verset": "Psaume 139:14",
-        "biblique": "Vous êtes une créature merveilleuse. Votre valeur dépend de l'amour de Dieu, pas de vos performances."
+        "desc": "Croyance profonde d'être intérieurement défectueux, indigne d'amour ou 'mauvais'. Crainte constante que si l'on vous voit tel que vous êtes, on vous rejettera.",
+        "verset": "Romains 8:1 / Sophonie 3:17",
+        "biblique": "La honte dit 'je suis une erreur', Dieu dit 'tu es ma créature merveilleuse'. La Justification par la foi signifie que vous êtes déclaré juste et pur grâce à Christ. Votre valeur ne dépend pas de votre perfection, mais de Son amour inconditionnel."
     },
     "FA": {
         "titre": "Échec",
-        "desc": "La croyance que vous avez échoué, que vous échouerez inévitablement, ou que vous êtes fondamentalement moins compétent que vos pairs.",
-        "verset": "Philippiens 4:13",
-        "biblique": "Le succès selon Dieu n'est pas la réussite sociale, mais la fidélité. Sa force s'accomplit dans votre faiblesse."
+        "desc": "Sentiment d'être incompétent par rapport à vos pairs, de ne pas avoir de talent ou d'intelligence. Croyance que l'échec est inévitable.",
+        "verset": "2 Corinthiens 12:9",
+        "biblique": "Le Royaume de Dieu renverse les valeurs du monde : la puissance s'accomplit dans la faiblesse. Votre identité ne se trouve pas dans la performance sociale ou professionnelle, mais dans votre filiation divine. Dieu utilise souvent ce que le monde considère comme faible."
     },
     "DI": {
         "titre": "Dépendance / Incompétence",
-        "desc": "La conviction d'être incapable de gérer vos responsabilités quotidiennes sans une aide considérable d'autrui. Sentiment d'impuissance.",
-        "verset": "2 Timothée 1:7",
-        "biblique": "Dieu ne nous a pas donné un esprit de timidité, mais de force, d'amour et de sagesse."
+        "desc": "Sentiment d'être incapable de gérer le quotidien sans l'aide d'autrui. Manque de confiance dans son propre jugement.",
+        "verset": "Philippiens 4:13",
+        "biblique": "Dieu ne nous a pas donné un esprit de timidité, mais de force. La dépendance saine est envers Dieu, qui vous donne la sagesse. L'Esprit Saint habite en vous pour vous guider et vous rendre capable de prendre vos propres responsabilités d'adulte."
     },
     "VU": {
         "titre": "Vulnérabilité au danger",
-        "desc": "Peur exagérée qu'une catastrophe (médicale, financière, criminelle) puisse survenir à tout moment et que vous ne pourrez pas y faire face.",
+        "desc": "Peur exagérée et constante qu'une catastrophe (maladie, ruine, agression) soit imminente. État d'hyper-vigilance.",
         "verset": "Psaume 91:4",
-        "biblique": "Il vous couvrira de ses plumes. Sa fidélité est une armure et un bouclier contre la peur."
+        "biblique": "L'antidote à la peur n'est pas le contrôle, mais la confiance en la Souveraineté de Dieu. Il est votre abri. Apprendre à remettre l'avenir, que vous ne pouvez contrôler, entre les mains de Celui qui tient l'univers."
     },
     "EU": {
         "titre": "Fusion / Personnalité Atrophiée",
-        "desc": "Attachement émotionnel excessif à des proches, au détriment de votre propre individualité. Sentiment de ne pas pouvoir exister ou être heureux sans l'autre.",
-        "verset": "Galates 5:1",
-        "biblique": "C'est pour la liberté que Christ nous a affranchis. Vous avez une identité propre en Lui."
+        "desc": "Manque d'individualité, relation symbiotique avec un parent ou un conjoint. Sentiment de ne pas exister sans l'autre.",
+        "verset": "Galates 1:10",
+        "biblique": "Vous êtes une création unique voulue par Dieu, distincte de vos parents ou conjoint. Christ vous appelle à le suivre Lui, ce qui nécessite de devenir une personne à part entière. L'amour vrai laisse l'autre exister."
     },
     "SB": {
         "titre": "Assujettissement",
-        "desc": "Soumission excessive au contrôle des autres pour éviter la colère, les représailles ou l'abandon. Vous supprimez vos propres besoins.",
-        "verset": "Actes 5:29",
-        "biblique": "Il faut obéir à Dieu plutôt qu'aux hommes. Vous êtes serviteur de Dieu, pas esclave des hommes."
+        "desc": "Vous vous soumettez aux autres par peur des conséquences (colère, rejet). Vous taisez vos propres besoins et émotions.",
+        "verset": "Galates 5:1",
+        "biblique": "'C'est pour la liberté que Christ nous a affranchis'. Dieu ne veut pas d'une soumission basée sur la peur, mais d'un service basé sur l'amour. Vous avez le droit d'exister, d'avoir des limites et de dire non, car vous êtes serviteur de Dieu avant d'être serviteur des hommes."
     },
     "SS": {
         "titre": "Abnégation",
-        "desc": "Concentration excessive sur les besoins des autres au détriment des vôtres, souvent pour éviter de se sentir coupable. Le syndrome du 'Sauveur'.",
+        "desc": "Sacrifice excessif de vos besoins pour satisfaire ceux des autres, souvent par culpabilité. Le syndrome du 'Sauveur'.",
         "verset": "Matthieu 22:39",
-        "biblique": "Tu aimeras ton prochain 'comme toi-même'. Prendre soin de soi est nécessaire pour bien servir."
+        "biblique": "Le commandement est d'aimer son prochain 'comme soi-même', pas 'au lieu de soi-même'. Votre corps et votre âme sont le temple du Saint-Esprit ; en prendre soin n'est pas de l'égoïsme, c'est de la bonne gestion pour pouvoir servir durablement."
     },
     "EI": {
         "titre": "Inhibition Émotionnelle",
-        "desc": "Inhibition excessive des actions, des sentiments ou de la communication spontanée, souvent pour éviter la désapprobation ou la honte.",
-        "verset": "Jean 8:36",
-        "biblique": "Si le Fils vous affranchit, vous serez réellement libres. Libres de ressentir et d'être vrais."
+        "desc": "Verrouillage des émotions et de la spontanéité par peur de la honte ou de perdre le contrôle. Apparence froide ou trop rationnelle.",
+        "verset": "Psaume 62:9",
+        "biblique": "'Répandez votre cœur devant Lui'. Les Psaumes nous montrent une vie émotionnelle riche devant Dieu (joie, colère, tristesse). Jésus a pleuré. La maturité spirituelle inclut la vérité émotionnelle, car la vérité libère."
     },
     "US": {
         "titre": "Exigences Élevées",
-        "desc": "La croyance que l'on doit s'efforcer d'atteindre des normes internes très élevées de comportement et de performance, souvent pour éviter la critique.",
-        "verset": "Matthieu 11:28",
-        "biblique": "Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos."
+        "desc": "Tyrannie du 'je dois'. Perfectionnisme, règles rigides et impossibilité de se détendre. La valeur personnelle dépend de la performance.",
+        "verset": "Éphésiens 2:8-9",
+        "biblique": "C'est par la grâce que vous êtes sauvés, non par les œuvres. Dieu n'est pas un patron exigeant qui attend la performance, mais un Père qui donne le repos. Accepter la grâce, c'est accepter d'être imparfait et pourtant pleinement aimé."
     },
     "ET": {
         "titre": "Droits Personnels / Grandeur",
-        "desc": "La croyance que vous êtes supérieur aux autres, que vous avez des droits spéciaux, ou que vous n'avez pas à suivre les règles de réciprocité sociale.",
-        "verset": "Philippiens 2:3",
-        "biblique": "Que l'humilité vous fasse regarder les autres comme étant au-dessus de vous-mêmes."
+        "desc": "Sentiment de supériorité, d'avoir des droits spéciaux, manque d'empathie pour les besoins d'autrui. Intolérance à la frustration.",
+        "verset": "Philippiens 2:3-5",
+        "biblique": "L'attitude de Christ, Roi de gloire qui s'est fait serviteur, est le remède. La vraie grandeur dans le Royaume est l'humilité et le service. Reconnaître que tout ce que nous avons est un don immérité de Dieu brise l'orgueil."
     },
     "IS": {
         "titre": "Contrôle de soi insuffisant",
-        "desc": "Difficulté persistante à exercer un contrôle de soi suffisant et une tolérance à la frustration pour atteindre ses objectifs personnels.",
+        "desc": "Difficulté à tolérer la frustration, impulsivité, difficulté à tenir ses engagements ou à discipliner ses émotions.",
         "verset": "Galates 5:22",
-        "biblique": "Le fruit de l'Esprit est... la maîtrise de soi."
+        "biblique": "La maîtrise de soi est un fruit de l'Esprit, pas juste un effort de volonté. C'est Dieu qui produit en nous le vouloir et le faire. La croissance spirituelle implique d'apprendre à différer la gratification immédiate pour une joie supérieure en Dieu."
     },
     "AS": {
         "titre": "Recherche d'approbation",
-        "desc": "Recherche excessive de l'attention, de l'estime et de l'approbation des autres, au détriment du développement d'un sentiment de soi sûr et authentique.",
-        "verset": "1 Thessaloniciens 2:4",
-        "biblique": "Nous parlons, non pour plaire aux hommes, mais pour plaire à Dieu qui sonde nos cœurs."
+        "desc": "Votre estime de soi dépend entièrement du regard, de l'attention et de la validation des autres. Caméléon social.",
+        "verset": "Jean 5:44",
+        "biblique": "Comment pouvez-vous croire, vous qui tirez votre gloire les uns des autres ? La guérison vient quand le regard de Dieu ('Tu es mon enfant bien-aimé') devient plus lourd et plus réel que le regard des hommes. Vous vivez pour l'Audience d'Un seul."
     },
     "NP": {
         "titre": "Négativité / Pessimisme",
-        "desc": "Focalisation constante sur les aspects négatifs de la vie (douleur, mort, perte, conflit) tout en minimisant les aspects positifs.",
-        "verset": "Philippiens 4:8",
-        "biblique": "Que tout ce qui est vrai, honorable, juste... soit l'objet de vos pensées."
+        "desc": "Focalisation obsessionnelle sur le négatif (douleur, mort, perte) en minimisant le positif. Attente constante que tout tourne mal.",
+        "verset": "Lamentations 3:21-23",
+        "biblique": "La foi chrétienne est foncièrement réaliste mais porteuse d'Espérance. 'Voici ce que je veux repasser en mon cœur, ce qui me donnera de l'espérance : les bontés de l'Éternel ne sont pas épuisées'. C'est une discipline spirituelle que d'entraîner son regard à voir la grâce active."
     },
     "PU": {
         "titre": "Punition",
-        "desc": "La croyance que les gens (y compris soi-même) doivent être sévèrement punis pour leurs erreurs. Tendance à la colère, à l'intolérance et à l'impatience.",
+        "desc": "Croyance que les erreurs (les siennes ou celles des autres) méritent une punition sévère. Difficulté à pardonner, intolérance.",
         "verset": "Romains 8:1",
-        "biblique": "Il n'y a donc maintenant aucune condamnation pour ceux qui sont en Jésus-Christ."
+        "biblique": "Il n'y a plus de condamnation. À la croix, Christ a pris la punition que nous méritions. Si Dieu ne nous traite pas selon nos fautes, nous sommes appelés à relâcher ce désir de justice punitive envers nous-mêmes et envers les autres. C'est la voie de la Miséricorde."
     }
 }
 
@@ -459,7 +470,6 @@ if mode == "Espace Patient":
     * **6** = Me décrit **PARFAITEMENT**
     """)
     
-    # MODIFICATION : clear_on_submit=False permet de ne PAS effacer les réponses si erreur
     with st.form("form_patient", clear_on_submit=False):
         c1, c2 = st.columns(2)
         nom = c1.text_input("Votre Nom et Prénom *")
@@ -480,7 +490,6 @@ if mode == "Espace Patient":
         submitted = st.form_submit_button("Envoyer mes résultats au thérapeute", type="primary")
         
         if submitted:
-            # Vérification des champs obligatoires
             if not nom or not email:
                 st.error("⚠️ Oups ! Vous avez oublié de remplir votre **Nom** ou votre **Email**. Veuillez remonter en haut pour compléter ces champs, vos réponses ont été conservées.")
             else:
@@ -502,12 +511,33 @@ elif mode == "Espace Thérapeute":
         if df.empty:
             st.info("Aucun dossier pour le moment.")
         else:
+            st.markdown("### Gestion des Dossiers")
+            # Liste des dossiers (sans ID pour l'affichage propre)
             st.dataframe(df[["created_at", "nom", "email"]], use_container_width=True)
-            st.divider()
-            patient_select = st.selectbox("Sélectionner un patient :", df["nom"].unique())
             
-            if st.button("📊 Générer le Bilan Complet"):
-                patient_data = df[df["nom"] == patient_select].iloc[0]
+            st.divider()
+            
+            # --- SECTION SÉLECTION ET SUPPRESSION ---
+            c_select, c_action = st.columns([3, 1])
+            with c_select:
+                # On crée une liste formatée "Nom - Date" pour le menu déroulant
+                patient_options = {f"{row['nom']} ({row['created_at'][:16]})": row['id'] for index, row in df.iterrows()}
+                selected_label = st.selectbox("Sélectionner un dossier à analyser ou supprimer :", list(patient_options.keys()))
+                selected_id = patient_options[selected_label]
+            
+            with c_action:
+                st.write("") # Espacement
+                st.write("") 
+                if st.button("🗑️ Supprimer ce dossier", type="primary"):
+                    if delete_patient(selected_id):
+                        st.success("Dossier supprimé.")
+                        st.rerun() # Recharge la page immédiatement
+            
+            st.markdown("---")
+
+            if st.button("📊 Générer le Bilan Complet pour ce patient"):
+                # Récupération des données du patient sélectionné par ID
+                patient_data = df[df["id"] == selected_id].iloc[0]
                 reponses_dict = json.loads(patient_data["reponses_json"])
                 
                 # Calculs
@@ -552,7 +582,7 @@ elif mode == "Espace Thérapeute":
                     fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color='Moyenne', color_continuous_scale='Reds')
                     st.plotly_chart(fig_bar)
 
-                # Export Word avec Graphiques
+                # Export Word avec Graphiques et Contenu Pastoral
                 def generate_word_expert():
                     doc = Document()
                     doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
@@ -561,14 +591,13 @@ elif mode == "Espace Thérapeute":
                     # 1. Graphiques
                     doc.add_heading('1. Visualisation', level=1)
                     try:
-                        # On force l'utilisation du moteur Kaleido
                         img_radar = fig_radar.to_image(format="png", engine="kaleido")
                         doc.add_picture(BytesIO(img_radar), width=Inches(5))
                         
                         img_bar = fig_bar.to_image(format="png", engine="kaleido")
                         doc.add_picture(BytesIO(img_bar), width=Inches(5))
                     except Exception as e:
-                        doc.add_paragraph(f"[Erreur génération image : {str(e)} - Vérifiez que 'kaleido==0.2.1' est bien dans requirements.txt]")
+                        doc.add_paragraph(f"[Graphiques non disponibles : {str(e)}]")
 
                     # 2. Tableau
                     doc.add_heading('2. Scores Détaillés', level=1)
@@ -586,22 +615,29 @@ elif mode == "Espace Thérapeute":
                         row[2].text = str(r["Moyenne"])
                         row[3].text = str(r["Niveau"])
 
-                    # 3. Analyse Expert & Spirituelle
-                    doc.add_heading('3. Analyse Clinique & Spirituelle', level=1)
+                    # 3. Analyse Expert & Pastorale
+                    doc.add_heading('3. Analyse Clinique & Pastorale', level=1)
+                    doc.add_paragraph("Ce rapport intègre une approche de relation d'aide chrétienne, reliant les schémas émotionnels aux vérités bibliques pour la restauration de l'identité.")
+                    
                     if active_schemas_codes:
                         for code in active_schemas_codes:
                             info = INTERPRETATIONS_EXPERTES.get(code)
                             if info:
                                 p = doc.add_paragraph()
-                                runner = p.add_run(f"{info['titre']} ({code})")
-                                runner.bold = True
-                                runner.font.size = Inches(0.16)
+                                p.add_run(f"\n{info['titre']} ({code})").bold = True
+                                p.add_run(f" - Moyenne: {df_res.loc[df_res['Code'] == code, 'Moyenne'].values[0]}")
                                 
-                                doc.add_paragraph(f"Analyse : {info['desc']}")
-                                doc.add_paragraph(f"Promesse Biblique : '{info['biblique']}' ({info['verset']})").italic = True
+                                doc.add_paragraph(f"Diagnostic : {info['desc']}")
+                                
+                                p_bib = doc.add_paragraph()
+                                p_bib.add_run("Piste Pastorale : ").bold = True
+                                p_bib.add_run(info['biblique'])
+                                
+                                p_verset = doc.add_paragraph()
+                                p_verset.add_run(f"Verset clé : {info['verset']}").italic = True
                                 doc.add_paragraph("-" * 30)
                     else:
-                        doc.add_paragraph("Aucun schéma significatif détecté.")
+                        doc.add_paragraph("Aucun schéma significatif détecté (scores < 5).")
 
                     out = BytesIO()
                     doc.save(out)
@@ -610,7 +646,7 @@ elif mode == "Espace Thérapeute":
                 st.download_button(
                     "📥 Télécharger le Rapport Expert (Word)",
                     generate_word_expert(),
-                    f"Bilan_Expert_{patient_data['nom']}.docx",
+                    f"Bilan_Pastoral_{patient_data['nom']}.docx",
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
 
