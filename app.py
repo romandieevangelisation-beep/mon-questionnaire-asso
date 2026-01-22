@@ -687,3 +687,15 @@ elif mode == "Espace Thérapeute":
 
     elif pwd_input:
         st.error("Mot de passe incorrect.")
+# --- PIED DE PAGE (Mentions Légales) ---
+st.markdown("---")
+with st.expander("🔒 Confidentialité et Protection des Données"):
+    st.markdown("""
+    **Engagement de confidentialité :**
+    * Les données recueillies via ce formulaire sont strictement confidentielles et couvertes par le secret professionnel.
+    * Elles sont stockées de manière sécurisée et cryptée.
+    * Seul votre thérapeute a accès aux résultats détaillés.
+    * Aucune donnée n'est partagée avec des tiers ou utilisée à des fins commerciales.
+    * Conformément à la loi, vous pouvez demander à tout moment la suppression intégrale de vos réponses de notre base de données.
+    """)
+    st.caption("Application développée pour usage clinique exclusif. © 2024 Cabinet de Thérapie.")
