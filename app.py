@@ -459,10 +459,11 @@ if mode == "Espace Patient":
     * **6** = Me décrit **PARFAITEMENT**
     """)
     
-    with st.form("form_patient", clear_on_submit=True):
+    # MODIFICATION : clear_on_submit=False permet de ne PAS effacer les réponses si erreur
+    with st.form("form_patient", clear_on_submit=False):
         c1, c2 = st.columns(2)
-        nom = c1.text_input("Votre Nom et Prénom")
-        email = c2.text_input("Votre Email")
+        nom = c1.text_input("Votre Nom et Prénom *")
+        email = c2.text_input("Votre Email *")
         
         reponses = {}
         st.divider()
@@ -479,12 +480,13 @@ if mode == "Espace Patient":
         submitted = st.form_submit_button("Envoyer mes résultats au thérapeute", type="primary")
         
         if submitted:
-            if not nom:
-                st.warning("⚠️ Merci d'indiquer votre nom avant d'envoyer.")
+            # Vérification des champs obligatoires
+            if not nom or not email:
+                st.error("⚠️ Oups ! Vous avez oublié de remplir votre **Nom** ou votre **Email**. Veuillez remonter en haut pour compléter ces champs, vos réponses ont été conservées.")
             else:
                 with st.spinner("Envoi sécurisé en cours..."):
                     if save_patient_data(nom, email, reponses):
-                        st.success("✅ Vos réponses ont été bien reçues ! Merci.")
+                        st.success("✅ Vos réponses ont été bien reçues et enregistrées ! Merci.")
                         st.balloons()
 
 # 2. ESPACE THÉRAPEUTE
@@ -556,17 +558,17 @@ elif mode == "Espace Thérapeute":
                     doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
                     doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
                     
-                    # 1. Graphiques (Tentative d'insertion)
+                    # 1. Graphiques
                     doc.add_heading('1. Visualisation', level=1)
                     try:
-                        # Radar
-                        img_radar = fig_radar.to_image(format="png")
+                        # On force l'utilisation du moteur Kaleido
+                        img_radar = fig_radar.to_image(format="png", engine="kaleido")
                         doc.add_picture(BytesIO(img_radar), width=Inches(5))
-                        # Barres
-                        img_bar = fig_bar.to_image(format="png")
+                        
+                        img_bar = fig_bar.to_image(format="png", engine="kaleido")
                         doc.add_picture(BytesIO(img_bar), width=Inches(5))
-                    except:
-                        doc.add_paragraph("[Note: Installez 'kaleido' dans requirements.txt pour voir les graphiques ici]")
+                    except Exception as e:
+                        doc.add_paragraph(f"[Erreur génération image : {str(e)} - Vérifiez que 'kaleido==0.2.1' est bien dans requirements.txt]")
 
                     # 2. Tableau
                     doc.add_heading('2. Scores Détaillés', level=1)
