@@ -478,8 +478,9 @@ if mode == "Espace Patient":
         reponses = {}
         st.divider()
         
-        for domaine, q_dict in YSQ_QUESTIONS.items():
-            st.subheader(f"🔹 {domaine}")
+        # MODIFICATION : Titres neutres pour éviter le biais
+        for i, (domaine, q_dict) in enumerate(YSQ_QUESTIONS.items()):
+            st.markdown(f"#### 📝 Série {i+1}") 
             for q_num, q_text in q_dict.items():
                 st.write(f"**{q_num}.** {q_text}")
                 reponses[f"Q{q_num}"] = st.slider(
@@ -512,31 +513,28 @@ elif mode == "Espace Thérapeute":
             st.info("Aucun dossier pour le moment.")
         else:
             st.markdown("### Gestion des Dossiers")
-            # Liste des dossiers (sans ID pour l'affichage propre)
             st.dataframe(df[["created_at", "nom", "email"]], use_container_width=True)
             
             st.divider()
             
-            # --- SECTION SÉLECTION ET SUPPRESSION ---
+            # SÉLECTION ET SUPPRESSION
             c_select, c_action = st.columns([3, 1])
             with c_select:
-                # On crée une liste formatée "Nom - Date" pour le menu déroulant
                 patient_options = {f"{row['nom']} ({row['created_at'][:16]})": row['id'] for index, row in df.iterrows()}
                 selected_label = st.selectbox("Sélectionner un dossier à analyser ou supprimer :", list(patient_options.keys()))
                 selected_id = patient_options[selected_label]
             
             with c_action:
-                st.write("") # Espacement
+                st.write("") 
                 st.write("") 
                 if st.button("🗑️ Supprimer ce dossier", type="primary"):
                     if delete_patient(selected_id):
                         st.success("Dossier supprimé.")
-                        st.rerun() # Recharge la page immédiatement
+                        st.rerun()
             
             st.markdown("---")
 
             if st.button("📊 Générer le Bilan Complet pour ce patient"):
-                # Récupération des données du patient sélectionné par ID
                 patient_data = df[df["id"] == selected_id].iloc[0]
                 reponses_dict = json.loads(patient_data["reponses_json"])
                 
@@ -582,24 +580,21 @@ elif mode == "Espace Thérapeute":
                     fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color='Moyenne', color_continuous_scale='Reds')
                     st.plotly_chart(fig_bar)
 
-                # Export Word avec Graphiques et Contenu Pastoral
+                # Export Word
                 def generate_word_expert():
                     doc = Document()
                     doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
                     doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
                     
-                    # 1. Graphiques
                     doc.add_heading('1. Visualisation', level=1)
                     try:
                         img_radar = fig_radar.to_image(format="png", engine="kaleido")
                         doc.add_picture(BytesIO(img_radar), width=Inches(5))
-                        
                         img_bar = fig_bar.to_image(format="png", engine="kaleido")
                         doc.add_picture(BytesIO(img_bar), width=Inches(5))
                     except Exception as e:
                         doc.add_paragraph(f"[Graphiques non disponibles : {str(e)}]")
 
-                    # 2. Tableau
                     doc.add_heading('2. Scores Détaillés', level=1)
                     table = doc.add_table(rows=1, cols=4)
                     table.style = 'Table Grid'
@@ -615,7 +610,6 @@ elif mode == "Espace Thérapeute":
                         row[2].text = str(r["Moyenne"])
                         row[3].text = str(r["Niveau"])
 
-                    # 3. Analyse Expert & Pastorale
                     doc.add_heading('3. Analyse Clinique & Pastorale', level=1)
                     doc.add_paragraph("Ce rapport intègre une approche de relation d'aide chrétienne, reliant les schémas émotionnels aux vérités bibliques pour la restauration de l'identité.")
                     
@@ -626,13 +620,10 @@ elif mode == "Espace Thérapeute":
                                 p = doc.add_paragraph()
                                 p.add_run(f"\n{info['titre']} ({code})").bold = True
                                 p.add_run(f" - Moyenne: {df_res.loc[df_res['Code'] == code, 'Moyenne'].values[0]}")
-                                
                                 doc.add_paragraph(f"Diagnostic : {info['desc']}")
-                                
                                 p_bib = doc.add_paragraph()
                                 p_bib.add_run("Piste Pastorale : ").bold = True
                                 p_bib.add_run(info['biblique'])
-                                
                                 p_verset = doc.add_paragraph()
                                 p_verset.add_run(f"Verset clé : {info['verset']}").italic = True
                                 doc.add_paragraph("-" * 30)
