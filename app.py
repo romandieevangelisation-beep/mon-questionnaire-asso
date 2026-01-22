@@ -698,4 +698,4 @@ with st.expander("🔒 Confidentialité et Protection des Données"):
     * Aucune donnée n'est partagée avec des tiers ou utilisée à des fins commerciales.
     * Conformément à la loi, vous pouvez demander à tout moment la suppression intégrale de vos réponses de notre base de données.
     """)
-    st.caption("Application développée pour usage clinique exclusif. © 2024 Cabinet de Thérapie.")
+    st.caption("Application développée pour usage en suivit de relation d'aide. © 2026 la-barque.")
