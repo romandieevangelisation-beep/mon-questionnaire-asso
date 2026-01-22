@@ -3,5 +3,4 @@ pandas
 plotly
 python-docx
 supabase
-openpyxl
 kaleido
