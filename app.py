@@ -142,7 +142,7 @@ YSQ_QUESTIONS = {
         57: "Je ne mérite pas d'être aimé(e).",
         58: "J'ai honte de certains aspects de ma personnalité.",
         59: "Je suis une mauvaise personne au fond de moi.",
-        60: "Je hide mes défauts réels aux autres.",
+        60: "Je cache mes défauts réels aux autres.",
         61: "Je suis indigne de respect.",
         62: "Je me sens humilié(e) par mes échecs ou mes manques.",
         63: "Je suis extrêmement critique envers moi-même.",
@@ -171,11 +171,11 @@ YSQ_QUESTIONS = {
         82: "J'ai peur de faire des erreurs graves si je n'ai pas de conseils constants.",
         83: "Je ne peux pas survivre sans quelqu'un pour s'occuper de moi.",
         84: "Je ne fais pas confiance à mon propre jugement pour les choses quotidiennes.",
-        85: "Je me sens dépassé(e) par les défis de la vie.",
+        85: "Je me sens dépassé(e) par les responsabilités de la vie.",
         86: "Je cherche toujours quelqu'un pour me dire quoi faire.",
         87: "Je me sens vulnérable dès que je suis seul(e).",
         88: "Je ne sais pas résoudre les problèmes pratiques courants.",
-        89: "Je panique quand je dois affronter un défi inconnu seul(e).",
+        89: "Je panique quand je sors seul(e).",
         90: "Je laisse volontiers les autres prendre les commandes.",
         91: "Je ne suis pas du tout autonome.",
         92: "Je me sens incompétent(e) dans la plupart des domaines techniques."
@@ -253,7 +253,7 @@ YSQ_QUESTIONS = {
         152: "Je dois être parfait(e) dans tout ce que je fais.",
         153: "Je ne suis jamais satisfait(e) de mes résultats, je peux faire mieux.",
         154: "Je travaille sans relâche, le repos est une perte de temps.",
-        155: "Je suis obsédé(e) par les détails et la perfection.",
+        155: "Je suis perfectionniste, tout doit être impeccable.",
         156: "Une seule petite erreur gâche tout mon travail.",
         157: "Je me mets une pression insoutenable pour réussir.",
         158: "Je suis très exigeant(e) envers les autres aussi.",
@@ -286,7 +286,7 @@ YSQ_QUESTIONS = {
         181: "Je cède instantanément à mes impulsions.",
         182: "Je ne supporte pas la frustration ou l'attente.",
         183: "Je m'ennuie très vite et je change tout le temps d'avis.",
-        184: "Je vis au-dessus de mes moyens sans réfléchir.",
+        184: "Je vis au jour le jour sans plan financier.",
         185: "J'agis avant de penser aux conséquences.",
         186: "Je fuis les responsabilités trop pesantes.",
         187: "Ma vie est chaotique et désorganisée.",
@@ -303,7 +303,7 @@ YSQ_QUESTIONS = {
         196: "J'ai besoin d'être constamment complimenté(e).",
         197: "Je fais tout pour être le centre de l'attention.",
         198: "Une critique peut me briser pour plusieurs jours.",
-        199: "Je soigne mon image et mon apparence excessivement.",
+        199: "Je soigne mon image de façon excessive.",
         200: "Je veux à tout prix être célèbre ou influent(e).",
         201: "Je suis incapable de choisir sans demander l'avis d'autrui.",
         202: "Je veux plaire à tout le monde, même aux gens que je n'aime pas.",
@@ -324,7 +324,7 @@ YSQ_QUESTIONS = {
         215: "Je suis très cynique vis-à-vis des intentions humaines.",
         216: "Je m'inquiète pour des choses qui n'arriveront probablement jamais.",
         217: "L'avenir me semble sombre et angoissant.",
-        218: "Je me plains souvent de mes problèmes.",
+        218: "Je me plains souvent de mes difficultés.",
         219: "Je suis incapable de voir le bon côté des choses.",
         220: "Le bonheur est une illusion éphémère.",
         221: "Je décourage les autres avec mon réalisme négatif.",
@@ -368,6 +368,7 @@ def delete_patient(patient_id):
     except: return False
 
 # --- INTERFACE ---
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=80)
 st.sidebar.title("Navigation")
 mode = st.sidebar.radio("Aller vers :", ["Espace Patient", "Espace Thérapeute"])
 
@@ -398,6 +399,8 @@ if mode == "Espace Patient":
     *Vos réponses sont strictement confidentielles et seront analysées uniquement par votre thérapeute.*
     """)
     
+    options_reponse = [1, 2, 3, 4, 5, 6]
+
     with st.form("form_patient", clear_on_submit=False):
         c1, c2 = st.columns(2)
         nom = c1.text_input("Votre Nom et Prénom *")
@@ -406,73 +409,88 @@ if mode == "Espace Patient":
         reponses = {}
         st.divider()
         
-        # Affichage par séries neutres
+        # Affichage par séries neutres (Série 1, Série 2...) pour éviter les biais
         for i, (domaine, q_dict) in enumerate(YSQ_QUESTIONS.items()):
             with st.container():
                 st.markdown(f"#### 📝 Série {i+1}")
                 for q_num, q_text in q_dict.items():
                     st.write(f"**{q_num}.** {q_text}")
                     reponses[f"Q{q_num}"] = st.pills(
-                        f"Choix Q{q_num}", options=[1, 2, 3, 4, 5, 6],
-                        selection_mode="single", label_visibility="collapsed",
+                        f"Choix Q{q_num}",
+                        options=options_reponse,
+                        selection_mode="single",
+                        label_visibility="collapsed",
                         key=f"q_{q_num}"
                     )
                     st.caption("")
             st.divider()
         
-        submitted = st.form_submit_button("Envoyer mes résultats", type="primary")
+        submitted = st.form_submit_button("Envoyer mes résultats au thérapeute", type="primary")
         
         if submitted:
             missing = [k for k, v in reponses.items() if v is None]
             if not nom or not email:
-                st.error("⚠️ Merci de remplir votre nom et email.")
+                st.error("⚠️ Oups ! Vous avez oublié de remplir votre **Nom** ou votre **Email** en haut du formulaire.")
             elif missing:
-                st.warning(f"⚠️ Il manque {len(missing)} réponse(s). Merci de vérifier.")
+                st.warning(f"⚠️ Il manque des réponses à **{len(missing)} questions**. Merci de vérifier les séries incomplètes.")
             else:
-                if save_patient_data(nom, email, reponses):
-                    st.success("✅ Vos réponses ont été transmises avec succès.")
-                    st.balloons()
+                with st.spinner("Envoi sécurisé en cours..."):
+                    if save_patient_data(nom, email, reponses):
+                        st.success("✅ Vos réponses ont été bien reçues et enregistrées ! Merci.")
+                        st.balloons()
 
 # ==============================================================================
 # 2. ESPACE THÉRAPEUTE (ADMIN)
 # ==============================================================================
 elif mode == "Espace Thérapeute":
+    st.sidebar.divider()
     pwd_input = st.sidebar.text_input("Mot de passe Admin", type="password")
-    if pwd_input == st.secrets.get("ADMIN_PASSWORD"):
-        st.header("🔒 Administration Clinique Expert")
+    
+    if "ADMIN_PASSWORD" in st.secrets and pwd_input == st.secrets["ADMIN_PASSWORD"]:
+        st.header("🔒 Tableau de Bord Clinique Expert")
+        
         df = load_all_patients()
         
-        if not df.empty:
-            st.markdown("### Liste des Dossiers")
+        if df.empty:
+            st.info("Aucun dossier pour le moment.")
+        else:
+            st.markdown("### Gestion des Dossiers")
             st.dataframe(df[["created_at", "nom", "email"]], use_container_width=True)
             
             st.divider()
-            c_sel, c_del = st.columns([3, 1])
-            with c_sel:
-                patient_map = {f"{r['nom']} ({r['created_at'][:16]})": r['id'] for _, r in df.iterrows()}
-                selected_label = st.selectbox("Sélectionner un dossier :", list(patient_map.keys()))
-                sel_id = patient_map[selected_label]
-            with c_del:
-                st.write("")
-                st.write("")
-                if st.button("🗑️ Supprimer"):
-                    if delete_patient(sel_id):
-                        st.success("Supprimé.")
+            
+            c_select, c_action = st.columns([3, 1])
+            with c_select:
+                patient_options = {f"{row['nom']} ({row['created_at'][:16]})": row['id'] for index, row in df.iterrows()}
+                selected_label = st.selectbox("Sélectionner un dossier :", list(patient_options.keys()))
+                selected_id = patient_options[selected_label]
+            
+            with c_action:
+                st.write("") 
+                st.write("") 
+                if st.button("🗑️ Supprimer", type="primary"):
+                    if delete_patient(selected_id):
+                        st.success("Dossier supprimé.")
                         st.rerun()
             
-            if st.button("📊 Lancer l'Analyse"):
-                pat_data = df[df["id"] == sel_id].iloc[0]
-                reponses_dict = json.loads(pat_data["reponses_json"])
+            st.markdown("---")
+
+            if st.button("📊 Générer le Bilan Complet"):
+                patient_data = df[df["id"] == selected_id].iloc[0]
+                reponses_dict = json.loads(patient_data["reponses_json"])
                 
-                # Calculs des résultats
+                # Calculs
                 resultats = []
                 active_codes = []
+                
                 for domaine, q_dict in YSQ_QUESTIONS.items():
                     code = domaine.split(" : ")[0]
                     nom_sch = domaine.split(" : ")[1]
                     scores = [reponses_dict.get(f"Q{k}", 1) or 1 for k in q_dict.keys()]
-                    moy = sum(scores)/len(scores)
+                    
+                    moy = sum(scores) / len(scores)
                     sev = len([x for x in scores if x >= 5])
+                    pct = (sev / len(scores)) * 100
                     etoile = "⭐" if sev > 0 else ""
                     if etoile: active_codes.append(code)
                     
@@ -480,60 +498,66 @@ elif mode == "Espace Thérapeute":
                     if moy > 3.5: niv = "🔴 IMPORTANT"
                     elif moy >= 2.5: niv = "🟡 Moyen"
                     
-                    resultats.append({"Code": code, "Schéma": f"{nom_sch} {etoile}", "Moyenne": round(moy, 2), "Niveau": niv})
+                    resultats.append({
+                        "Code": code,
+                        "Schéma": f"{nom_sch} {etoile}",
+                        "Moyenne": round(moy, 2),
+                        "% Sévérité": f"{round(pct, 1)}%",
+                        "Niveau": niv
+                    })
                 
                 df_res = pd.DataFrame(resultats)
                 
-                # Affichage des graphiques
-                c_tab, c_rad = st.columns(2)
-                with c_tab: st.table(df_res)
-                with c_rad:
-                    fig = px.line_polar(df_res, r='Moyenne', theta='Code', line_close=True, range_r=[0,6])
-                    fig.update_traces(fill='toself', line_color='blue')
-                    st.plotly_chart(fig)
-
-                # Génération du Word
-                def generate_word():
-                    doc = Document()
-                    doc.add_heading(f"Bilan Psychométrique : {pat_data['nom']}", 0)
+                c1, c2 = st.columns(2)
+                with c1: st.table(df_res)
+                with c2:
+                    fig_radar = px.line_polar(df_res, r='Moyenne', theta='Code', line_close=True, range_r=[0,6])
+                    fig_radar.update_traces(fill='toself', line_color='blue')
+                    st.plotly_chart(fig_radar)
                     
-                    # Graphique
-                    try:
-                        img_io = BytesIO(fig.to_image(format="png", engine="kaleido"))
-                        doc.add_picture(img_io, width=Inches(5))
-                    except: doc.add_paragraph("[Graphique non disponible]")
+                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color='Moyenne', color_continuous_scale='Blues')
+                    st.plotly_chart(fig_bar)
 
-                    # Analyse par Domaine
-                    doc.add_heading('Analyse Clinique & Pastorale', level=1)
-                    for dom_name, dom_info in YOUNG_DOMAINS_INFO.items():
-                        match = [c for c in dom_info["codes"] if c in active_codes]
-                        if match:
-                            doc.add_heading(dom_name, level=2)
-                            doc.add_paragraph(dom_info["besoin"]).italic = True
-                            for c in match:
-                                info = INTERPRETATIONS_EXPERTES[c]
-                                p = doc.add_paragraph()
-                                p.add_run(f"🔹 {info['titre']}").bold = True
-                                doc.add_paragraph(f"Diagnostic : {info['desc']}")
-                                doc.add_paragraph(f"Piste Pastorale : {info['biblique']}").bold = True
-                                doc.add_paragraph(f"Verset : {info['verset']}").italic = True
+                def generate_word_expert():
+                    doc = Document()
+                    doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
+                    
+                    doc.add_heading('1. Visualisation', level=1)
+                    try:
+                        img_radar = fig_radar.to_image(format="png", engine="kaleido")
+                        doc.add_picture(BytesIO(img_radar), width=Inches(5))
+                    except: doc.add_paragraph("[Graphique indisponible]")
+
+                    doc.add_heading('2. Analyse par Domaine', level=1)
+                    if active_codes:
+                        for domain_name, domain_info in YOUNG_DOMAINS_INFO.items():
+                            match = [c for c in domain_info["codes"] if c in active_codes]
+                            if match:
+                                doc.add_heading(domain_name, level=2)
+                                doc.add_paragraph(domain_info["besoin"]).italic = True
+                                for c in match:
+                                    info = INTERPRETATIONS_EXPERTES[c]
+                                    doc.add_paragraph(f"🔹 {info['titre']}").bold = True
+                                    doc.add_paragraph(f"Diagnostic : {info['desc']}")
+                                    doc.add_paragraph(f"Piste Pastorale : {info['biblique']}").bold = True
+                                    doc.add_paragraph(f"Verset : {info['verset']}").italic = True
                     
                     out = BytesIO()
                     doc.save(out)
                     return out.getvalue()
 
-                st.download_button("📥 Télécharger le Rapport Expert", generate_word(), f"Bilan_{pat_data['nom']}.docx")
-        else:
-            st.info("Aucun questionnaire reçu.")
+                st.download_button("📥 Télécharger le Rapport Expert", generate_word_expert(), f"Bilan_{patient_data['nom']}.docx")
 
-# --- PIED DE PAGE (Mentions Légales) ---
+    elif pwd_input:
+        st.error("Mot de passe incorrect.")
+
+# --- FOOTER ---
 st.markdown("---")
 with st.expander("🔒 Confidentialité et Protection des Données"):
     st.markdown("""
     **Engagement de confidentialité :**
-    * Les données recueillies via ce formulaire sont strictement confidentielles et couvertes par le secret professionnel.
-    * Elles sont stockées de manière sécurisée et cryptée.
+    * Les données recueillies sont strictement confidentielles.
     * Seul votre thérapeute a accès aux résultats détaillés.
-    * Conformément à la loi, vous pouvez demander à tout moment la suppression intégrale de vos réponses de notre base de données.
+    * Vous pouvez demander la suppression de vos données à tout moment.
     """)
-    st.caption("Application développée pour usage en relation d'aide chrétienne. © la barque.")
+    st.caption("Application YSQ-L3 révisée. pour usage ne relation d'aide chrétienne © 2026 la Barque.")
