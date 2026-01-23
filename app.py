@@ -478,18 +478,27 @@ mode = st.sidebar.radio("Aller vers :", ["Espace Patient", "Espace Thérapeute"]
 
 # 1. ESPACE PATIENT
 if mode == "Espace Patient":
-    st.header("🌱 Questionnaire des Schémas (YSQ-L3)")
+    st.header("Bienvenue dans votre questionnaire des Schémas (YSQ-L3)")
     st.markdown("---")
     
     st.info("""
-    ### 📋 Instructions
-    Veuillez sélectionner le chiffre qui vous correspond le mieux.
-    * **1** = ❌ Entièrement **FAUX**
-    * **2** = 🟧 L'essentiel est **FAUX**
-    * **3** = 🟨 Plutôt **VRAI**
-    * **4** = 🟦 Modérément **VRAI**
-    * **5** = 🟦 L'essentiel est **VRAI**
-    * **6** = ✅ Me décrit **PARFAITEMENT**
+    ### 💡 Guide pour remplir ce questionnaire
+    
+    Ce questionnaire est un outil précieux pour mieux comprendre votre fonctionnement émotionnel. Il ne s'agit pas d'un examen, mais d'une "photographie" de vos ressentis.
+    
+    **Comment répondre ?**
+    1.  **Soyez spontané(e) :** Ne réfléchissez pas trop longtemps. Votre première impression est souvent la plus juste.
+    2.  **Visez la globalité :** Répondez en fonction de ce que vous ressentez **la plupart du temps** dans votre vie, et pas seulement aujourd'hui.
+    
+    **L'échelle de notation :**
+    * **1** : Ceci est **complètement faux** pour moi.
+    * **2** : C'est **faux dans l'ensemble**, cela ne me ressemble pas vraiment.
+    * **3** : C'est **plutôt vrai** que faux.
+    * **4** : C'est **modérément vrai**, cela me correspond assez souvent.
+    * **5** : C'est **vrai dans l'ensemble**, cela me décrit bien.
+    * **6** : Ceci me décrit **parfaitement**, c'est tout à fait moi.
+    
+    *Vos réponses sont strictement confidentielles et seront analysées uniquement par votre thérapeute.*
     """)
     
     options_reponse = [1, 2, 3, 4, 5, 6]
@@ -645,9 +654,7 @@ elif mode == "Espace Thérapeute":
                     doc.add_paragraph("Ce rapport intègre une approche de relation d'aide chrétienne, reliant les schémas émotionnels aux vérités bibliques pour la restauration de l'identité.")
                     
                     if active_schemas_codes:
-                        # BOUCLE PAR DOMAINE (AMÉLIORATION MAJEURE)
                         for domain_name, domain_info in YOUNG_DOMAINS_INFO.items():
-                            # Filtre les schémas actifs qui appartiennent à ce domaine
                             schemas_in_this_domain = [code for code in domain_info["codes"] if code in active_schemas_codes]
                             
                             if schemas_in_this_domain:
@@ -687,6 +694,7 @@ elif mode == "Espace Thérapeute":
 
     elif pwd_input:
         st.error("Mot de passe incorrect.")
+
 # --- PIED DE PAGE (Mentions Légales) ---
 st.markdown("---")
 with st.expander("🔒 Confidentialité et Protection des Données"):
@@ -695,7 +703,6 @@ with st.expander("🔒 Confidentialité et Protection des Données"):
     * Les données recueillies via ce formulaire sont strictement confidentielles et couvertes par le secret professionnel.
     * Elles sont stockées de manière sécurisée et cryptée.
     * Seul votre thérapeute a accès aux résultats détaillés.
-    * Aucune donnée n'est partagée avec des tiers ou utilisée à des fins commerciales.
     * Conformément à la loi, vous pouvez demander à tout moment la suppression intégrale de vos réponses de notre base de données.
     """)
-    st.caption("Application développée pour usage en suivit de relation d'aide. © 2026 la-barque.")
+    st.caption("Application développée pour usage en relation d'aide chrétienne. © 2026 la Barque.")
