@@ -4,14 +4,15 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
 from docx import Document
-from docx.shared import Inches, Pt
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from io import BytesIO
 import json
 import re
 from supabase import create_client
 
 # --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="Espace Clinique - YSQ-L3 Officiel", layout="wide")
+st.set_page_config(page_title="Espace Clinique - YSQ-L3 Expert", layout="wide")
 
 # --- CONNEXION SÉCURISÉE (SUPABASE) ---
 @st.cache_resource
@@ -25,6 +26,119 @@ def init_connection():
         return None
 
 supabase = init_connection()
+
+# --- 1. DÉFINITIONS CLINIQUES ET THÉOLOGIQUES APPROFONDIES ---
+# Rédaction style "Counseling Biblique & Psychologie Clinique"
+INTERPRETATIONS_EXPERTES = {
+    "ED": {
+        "titre": "Carence Affective",
+        "clinique": "Ce schéma signale un vide émotionnel précoce. Le patient a intégré la croyance que ses besoins de chaleur, d'empathie et de protection ne seront jamais validés par autrui. Il y a souvent une 'alexithymie' (difficulté à nommer ses besoins) par résignation acquise.",
+        "theologie": "Le mensonge racine est l'orphelinat spirituel. La guérison passe par la doctrine de l'Adoption (Romains 8:15). Dieu n'est pas un observateur distant mais un Père qui s'incline pour nourrir (Osée 11:4). Le travail consiste à réapprendre à 'recevoir' sans dissociation.",
+        "verset": "Psaume 27:10 - 'Car mon père et ma mère m'abandonnent, mais l'Éternel me recueillera.'"
+    },
+    "AB": {
+        "titre": "Abandon / Instabilité",
+        "clinique": "Perception de l'instabilité fondamentale des liens. Le patient vit dans l'hypervigilance de la perte, alternant entre agrippement anxieux et évitement préventif. La permanence de l'objet (l'autre) n'est pas acquise émotionnellement.",
+        "theologie": "L'antidote est la théologie de l'Alliance (Berit). Contrairement aux alliances humaines brisées, l'Alliance divine est unilatérale et irrévocable, fondée sur la fidélité de Dieu et non la performance humaine. Dieu est le Rocher (stabilité ontologique).",
+        "verset": "Hébreux 13:5 - 'Je ne te délaisserai point, et je ne t'abandonnerai point.'"
+    },
+    "MA": {
+        "titre": "Méfiance / Abus",
+        "clinique": "Attente que l'autre va nuire, manipuler ou trahir. Le patient projette une intentionnalité malveillante sur autrui. C'est un schéma de survie traumatique où la confiance est vécue comme une mise en danger.",
+        "theologie": "Le monde est déchu, mais Dieu est le Refuge (Mahseh). La guérison demande de renoncer à l'auto-protection cynique pour accepter la protection de Dieu. C'est le passage de la suspicion (peur) au discernement (sagesse) sous le regard de Dieu.",
+        "verset": "Psaume 62:8 - 'En tout temps, peuples, confiez-vous en lui, répandez vos cœurs en sa présence !'"
+    },
+    "SI": {
+        "titre": "Isolement Social",
+        "clinique": "Sentiment de différence fondamentale ('Je suis un extraterrestre'). Exclusion du groupe, non par rejet actif, mais par manque d'appartenance ressentie. Le patient se vit comme fondamentalement inadapté au lien social.",
+        "theologie": "L'homme a été créé pour la communion. En Christ, la 'différence' n'est plus un motif d'exclusion mais une fonction dans le Corps (1 Corinthiens 12). La rédemption inclut la réintégration dans la famille de Dieu, brisant la malédiction de l'errance de Caïn.",
+        "verset": "Éphésiens 2:19 - 'Vous n'êtes plus des étrangers, ni des gens du dehors; mais vous êtes concitoyens des saints.'"
+    },
+    "DS": {
+        "titre": "Imperfection / Honte",
+        "clinique": "Sentiment d'être intrinsèquement défectueux (Badness). La honte est ici toxique : ce n'est pas 'j'ai fait une erreur' (culpabilité), mais 'je SUIS une erreur'. Cela entraîne une hypersensibilité à la critique et des stratégies de masque.",
+        "theologie": "C'est le cœur de l'Évangile : la Justification. Christ a pris notre honte à la croix. Nous sommes déclarés justes non par notre amélioration, mais par l'imputation de sa justice. La valeur du patient ne dépend plus de son 'état', mais de son 'statut' en Christ.",
+        "verset": "Sophonie 3:17 - 'Il fera de toi le sujet de sa joie... il se réjouira à ton sujet avec des cris de joie.'"
+    },
+    "FA": {
+        "titre": "Échec",
+        "clinique": "Croyance en l'incompétence relative aux pairs. Le patient s'identifie à ses échecs scolaires ou professionnels. Il y a souvent un évitement des défis pour ne pas confirmer cette croyance (prophétie auto-réalisatrice).",
+        "theologie": "L'idolâtrie de la réussite sociale est brisée. Dieu appelle souvent 'les choses faibles pour confondre les fortes'. Le succès selon le Royaume est la fidélité, pas le résultat visible. La dignité du travail est restaurée comme service, non comme prouesse.",
+        "verset": "2 Corinthiens 12:9 - 'Ma grâce te suffit, car ma puissance s'accomplit dans la faiblesse.'"
+    },
+    "DI": {
+        "titre": "Dépendance / Incompétence",
+        "clinique": "Croyance en l'incapacité à survivre seul. Le patient régresse dans une posture infantile, cherchant une 'figure parentale' pour assumer ses responsabilités. Manque de confiance dans son propre jugement (Self-Efficacy faible).",
+        "theologie": "Dieu nous a donné un esprit de force et de sagesse (2 Tim 1:7). La dépendance saine est verticale (envers Dieu), ce qui permet une autonomie horizontale (envers les hommes). L'Esprit Saint est le 'Paraclet' qui capacite le croyant à marcher.",
+        "verset": "Philippiens 4:13 - 'Je puis tout par celui qui me fortifie.'"
+    },
+    "VU": {
+        "titre": "Vulnérabilité au danger",
+        "clinique": "Anxiété catastrophique. Le monde est perçu comme un lieu de dangers imminents (maladie, ruine) qu'on ne peut ni prévoir ni contrôler. Hypervigilance constante du système nerveux.",
+        "theologie": "Le problème racine est le contrôle. L'anxiété est une tentative d'assumer la Souveraineté de Dieu. La paix vient non pas de la sécurité totale (impossible), mais de la confiance en la Providence divine qui tient les temps et les circonstances.",
+        "verset": "Matthieu 6:34 / Psaume 91:4 - 'Il te couvrira de ses plumes, et tu trouveras un refuge sous ses ailes.'"
+    },
+    "EU": {
+        "titre": "Fusion / Personnalité Atrophiée",
+        "clinique": "Symbiose émotionnelle. Le patient n'a pas achevé son processus d'individuation. Il vit par procuration, absorbant les émotions de l'autre. Sentiment de vide existentiel sans la figure d'attachement.",
+        "theologie": "Dieu a créé des individus distincts responsables de leurs propres âmes. La fusion est une forme d'idolâtrie relationnelle. Christ appelle à le suivre, ce qui nécessite parfois de 'quitter' (émotionnellement) père et mère pour devenir une personne entière.",
+        "verset": "Galates 1:10 - 'Est-ce la faveur des hommes que je désire, ou celle de Dieu ?'"
+    },
+    "SB": {
+        "titre": "Assujettissement",
+        "clinique": "Soumission forcée pour éviter la colère ou l'abandon. Le patient réprime ses besoins et accumule une colère latente (agressivité passive). Il ne se sent pas le 'droit' d'avoir des limites.",
+        "theologie": "La crainte de l'homme est un piège. Le chrétien est serviteur de Dieu, ce qui l'affranchit de l'esclavage des hommes. La vraie soumission est un choix libre d'amour (agapé), pas une contrainte de peur (phobos). Dire 'non' est parfois un acte spirituel.",
+        "verset": "Galates 5:1 - 'C'est pour la liberté que Christ nous a affranchis.'"
+    },
+    "SS": {
+        "titre": "Abnégation",
+        "clinique": "Le syndrome du Sauveur. Focalisation excessive sur les besoins d'autrui au détriment des siens, motivée par la culpabilité ou le besoin de valorisation narcissique ('Je suis utile donc je suis').",
+        "theologie": "Nous ne sommes pas le Messie. Vouloir sauver tout le monde est une limite que seul Dieu peut franchir. L'intendance (gérance) de son propre corps et de son âme est un devoir biblique. L'amour du prochain implique de s'aimer soi-même correctement.",
+        "verset": "Matthieu 22:39 - 'Tu aimeras ton prochain comme toi-même.'"
+    },
+    "EI": {
+        "titre": "Inhibition Émotionnelle",
+        "clinique": "Sur-contrôle des affects. La spontanéité est jugée dangereuse ou honteuse. Le patient présente un 'faux-self' rationnel et froid pour se protéger de la vulnérabilité.",
+        "theologie": "Jésus a pleuré, a ressenti la colère et l'angoisse. Les émotions sont créées par Dieu comme des signaux. Les réprimer, c'est vivre dans le mensonge intérieur. La vérité (aletheia) implique l'authenticité émotionnelle devant Dieu (Psaumes de lamentation).",
+        "verset": "Psaume 62:9 - 'Répandez votre cœur en sa présence ! Dieu est notre refuge.'"
+    },
+    "US": {
+        "titre": "Exigences Élevées",
+        "clinique": "Perfectionnisme pathologique. La valeur personnelle est conditionnelle à la performance. Tyrannie du 'Je dois'. Incapacité à ressentir la satisfaction ou le repos.",
+        "theologie": "C'est une forme de légalisme : chercher à se justifier par les œuvres. L'Évangile est la fin de la performance pour le salut. Dieu a institué le Sabbat (repos) pour rappeler que le monde tourne sans nos efforts. La Grâce est l'acceptation de l'imperfection.",
+        "verset": "Matthieu 11:28 - 'Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos.'"
+    },
+    "ET": {
+        "titre": "Droits Personnels / Grandeur",
+        "clinique": "Narcissisme et sentiment de privilège. Le patient refuse les limites communes, manque d'empathie et tolère mal la frustration. C'est souvent une compensation d'un sentiment d'infériorité caché.",
+        "theologie": "L'orgueil précède la chute. Le Royaume de Dieu est un 'monde à l'envers' où le plus grand est le serviteur. Reconnaître sa dépendance totale à la grâce de Dieu est le seul remède à l'inflation de l'ego. L'autre n'est pas un outil, mais un porteur de l'image de Dieu.",
+        "verset": "Philippiens 2:3 - 'Regardez les autres comme étant au-dessus de vous-mêmes.'"
+    },
+    "IS": {
+        "titre": "Contrôle de soi insuffisant",
+        "clinique": "Impulsivité et intolérance à la frustration. Le principe de plaisir domine le principe de réalité. Difficulté à différer la gratification pour un but à long terme.",
+        "theologie": "La maîtrise de soi est un fruit de l'Esprit (Galates 5). Ce n'est pas une simple volonté humaine, mais une discipline spirituelle. C'est apprendre à dire 'non' à la chair pour dire 'oui' à la vie. La sagesse biblique valorise la construction patiente.",
+        "verset": "Proverbes 25:28 - 'Comme une ville forcée et sans murailles, ainsi est l'homme qui n'est pas maître de lui-même.'"
+    },
+    "AS": {
+        "titre": "Recherche d'approbation",
+        "clinique": "Le 'Caméléon'. L'estime de soi est externalisée : elle dépend entièrement du regard de l'autre. Le patient perd son authenticité pour s'adapter aux attentes supposées de l'entourage.",
+        "theologie": "La crainte de l'homme est un piège. C'est de l'idolâtrie de l'approbation. Le chrétien vit 'Coram Deo' (devant la face de Dieu). Seule l'approbation du Père ('Tu es mon fils bien-aimé') peut saturer ce besoin et libérer de la tyrannie du regard d'autrui.",
+        "verset": "Galates 1:10 - 'Si je plaisais encore aux hommes, je ne serais pas serviteur de Christ.'"
+    },
+    "NP": {
+        "titre": "Négativité / Pessimisme",
+        "clinique": "Biais cognitif de focalisation sur le négatif. Attente anxieuse que 'tout va s'effondrer'. Le positif est minimisé ou considéré comme suspect. Souvent lié à une anxiété chronique.",
+        "theologie": "Bien que le mal soit réel, la résignation est un déni de la bonté de Dieu et de l'Espérance. La 'joie' biblique est un combat de la foi, une discipline de l'attention (Phil 4:8) pour reconnaître la grâce commune et la providence au milieu des épreuves.",
+        "verset": "Lamentations 3:21 - 'Voici ce que je veux repasser en mon cœur, ce qui me donnera de l'espérance...'"
+    },
+    "PU": {
+        "titre": "Punition",
+        "clinique": "Intransigeance et dureté. Croyance que l'erreur mérite châtiment. Difficulté à pardonner (à soi et aux autres). Tendance au jugement moralisateur.",
+        "theologie": "C'est une incompréhension de la Croix. Christ a pris la punition. Il n'y a plus de condamnation (Rom 8:1). Maintenir une attitude punitive, c'est nier la suffisance du sacrifice de Jésus. Nous sommes appelés à être des canaux de la miséricorde que nous avons reçue.",
+        "verset": "Jacques 2:13 - 'La miséricorde triomphe du jugement.'"
+    }
+}
 
 # --- STRUCTURE DES DOMAINES DE YOUNG ---
 YOUNG_DOMAINS_INFO = {
@@ -48,28 +162,6 @@ YOUNG_DOMAINS_INFO = {
         "codes": ["NP", "EI", "US", "PU"],
         "besoin": "Besoin de spontanéité, de plaisir et de lâcher-prise."
     }
-}
-
-# --- DÉFINITIONS EXPERTES & PASTORALES ---
-INTERPRETATIONS_EXPERTES = {
-    "ED": {"titre": "Carence Affective", "desc": "Sentiment que vos besoins de sécurité, d'affection et d'écoute ne seront jamais comblés.", "verset": "Psaume 27:10", "biblique": "Dieu se révèle comme le Père parfait qui 'recueille'. Guérir, c'est oser croire que vous êtes digne de Son soin personnel."},
-    "AB": {"titre": "Abandon / Instabilité", "desc": "Peur viscérale que les relations soient fragiles et que vous finissiez seul(e).", "verset": "Hébreux 13:5", "biblique": "L'Alliance avec Dieu est immuable. Il a promis : 'Je ne te délaisserai point'. Votre sécurité est ancrée en Lui."},
-    "MA": {"titre": "Méfiance / Abus", "desc": "Attente que les autres vont intentionnellement vous blesser ou vous trahir.", "verset": "Psaume 56:4-5", "biblique": "Dieu est votre refuge sûr. La guérison permet de troquer la suspicion (peur) contre le discernement (sagesse) sous Sa garde."},
-    "SI": {"titre": "Isolement Social", "desc": "Sentiment de ne pas appartenir, d'être différent, 'à part' du reste de l'humanité.", "verset": "Éphésiens 2:19", "biblique": "En Christ, vous n'êtes plus étranger. Vous avez une place légitime et vitale dans la famille de Dieu, le Corps de Christ."},
-    "DS": {"titre": "Imperfection / Honte", "desc": "Croyance profonde d'être intérieurement défectueux ou indigne d'amour.", "verset": "Sophonie 3:17", "biblique": "La honte dit 'je suis une erreur', Dieu dit 'tu es ma créature merveilleuse'. Votre valeur est scellée par Son amour, pas vos manques."},
-    "FA": {"titre": "Échec", "desc": "Sentiment d'être incompétent, croyance que l'échec est inévitable.", "verset": "2 Corinthiens 12:9", "biblique": "La puissance de Dieu s'accomplit dans la faiblesse. Votre succès est défini par votre fidélité, pas par la performance sociale."},
-    "DI": {"titre": "Dépendance / Incompétence", "desc": "Sentiment d'être incapable de gérer le quotidien sans l'aide d'autrui.", "verset": "Philippiens 4:13", "biblique": "Dieu vous a donné un esprit de force. L'Esprit Saint vous rend capable de marcher dans vos responsabilités avec sagesse."},
-    "VU": {"titre": "Vulnérabilité au danger", "desc": "Peur constante qu'une catastrophe soit imminente. Hyper-vigilance.", "verset": "Psaume 91:4", "biblique": "L'antidote à la peur est la confiance en la Souveraineté de Dieu. Il est votre abri contre toute terreur."},
-    "EU": {"titre": "Fusion / Personnalité Atrophiée", "desc": "Manque d'individualité, sentiment de ne pas exister sans l'autre.", "verset": "Galates 1:10", "biblique": "Vous êtes une création unique. Christ vous appelle à une liberté qui permet d'aimer sans se perdre dans l'autre."},
-    "SB": {"titre": "Assujettissement", "desc": "Soumission aux autres par peur des conséquences. Vous taisez vos besoins.", "verset": "Galates 5:1", "biblique": "Christ vous a libéré pour l'amour, pas pour l'esclavage de la peur. Vous servez Dieu en premier, avec des limites saines."},
-    "SS": {"titre": "Abnégation", "desc": "Sacrifice excessif de vos besoins (Syndrome du Sauveur).", "verset": "Matthieu 22:39", "biblique": "Aimer son prochain 'comme soi-même'. Honorer votre propre vie, c'est honorer le temple du Saint-Esprit."},
-    "EI": {"titre": "Inhibition Émotionnelle", "desc": "Verrouillage des émotions et de la spontanéité par peur de la honte.", "verset": "Psaume 62:9", "biblique": "Répandez votre cœur devant Lui. La vérité émotionnelle est une étape vers la liberté que Jésus nous offre."},
-    "US": {"titre": "Exigences Élevées", "desc": "Perfectionnisme, règles rigides et impossibilité de se détendre.", "verset": "Matthieu 11:28", "biblique": "Dieu n'est pas un tyran mais un Père qui donne le repos. La grâce remplace le perfectionnisme étouffant."},
-    "ET": {"titre": "Droits Personnels / Grandeur", "desc": "Sentiment de supériorité, d'avoir des droits spéciaux.", "verset": "Philippiens 2:3", "biblique": "La vraie grandeur réside dans l'humilité de Christ. Servir les autres est le chemin de la joie véritable."},
-    "IS": {"titre": "Contrôle de soi insuffisant", "desc": "Difficulté à tolérer la frustration, impulsivité.", "verset": "Galates 5:22", "biblique": "La maîtrise de soi est un fruit de l'Esprit. Il fortifie votre volonté pour des choix qui honorent Dieu."},
-    "AS": {"titre": "Recherche d'approbation", "desc": "Votre estime dépend entièrement de la validation des autres.", "verset": "1 Thessaloniciens 2:4", "biblique": "Vous vivez pour plaire à Dieu qui sonde les cœurs. Son approbation est votre seul fondement sûr."},
-    "NP": {"titre": "Négativité / Pessimisme", "desc": "Focalisation sur le négatif en minimisant le positif.", "verset": "Philippiens 4:8", "biblique": "La foi entraîne le regard à voir la grâce. Fixez vos pensées sur ce qui est digne de louange."},
-    "PU": {"titre": "Punition", "desc": "Croyance que les erreurs méritent une punition sévère. Rancune.", "verset": "Romains 8:1", "biblique": "La condamnation a été portée par Christ. Pratiquer la miséricorde envers soi et les autres est la voie de la paix."}
 }
 
 # --- LES 232 QUESTIONS RÉVISÉES (YSQ-L3) ---
@@ -171,11 +263,11 @@ YSQ_QUESTIONS = {
         82: "J'ai peur de faire des erreurs graves si je n'ai pas de conseils constants.",
         83: "Je ne peux pas survivre sans quelqu'un pour s'occuper de moi.",
         84: "Je ne fais pas confiance à mon propre jugement pour les choses quotidiennes.",
-        85: "Je me sens dépassé(e) par les responsabilités de la vie.",
+        85: "Je me sens dépassé(e) par les défis de la vie.",
         86: "Je cherche toujours quelqu'un pour me dire quoi faire.",
         87: "Je me sens vulnérable dès que je suis seul(e).",
         88: "Je ne sais pas résoudre les problèmes pratiques courants.",
-        89: "Je panique quand je sors seul(e).",
+        89: "Je panique quand je dois affronter un défi inconnu seul(e).",
         90: "Je laisse volontiers les autres prendre les commandes.",
         91: "Je ne suis pas du tout autonome.",
         92: "Je me sens incompétent(e) dans la plupart des domaines techniques."
@@ -253,7 +345,7 @@ YSQ_QUESTIONS = {
         152: "Je dois être parfait(e) dans tout ce que je fais.",
         153: "Je ne suis jamais satisfait(e) de mes résultats, je peux faire mieux.",
         154: "Je travaille sans relâche, le repos est une perte de temps.",
-        155: "Je suis perfectionniste, tout doit être impeccable.",
+        155: "Je suis obsédé(e) par les détails et la perfection.",
         156: "Une seule petite erreur gâche tout mon travail.",
         157: "Je me mets une pression insoutenable pour réussir.",
         158: "Je suis très exigeant(e) envers les autres aussi.",
@@ -286,7 +378,7 @@ YSQ_QUESTIONS = {
         181: "Je cède instantanément à mes impulsions.",
         182: "Je ne supporte pas la frustration ou l'attente.",
         183: "Je m'ennuie très vite et je change tout le temps d'avis.",
-        184: "Je vis au jour le jour sans plan financier.",
+        184: "Je vis au-dessus de mes moyens sans réfléchir.",
         185: "J'agis avant de penser aux conséquences.",
         186: "Je fuis les responsabilités trop pesantes.",
         187: "Ma vie est chaotique et désorganisée.",
@@ -399,8 +491,6 @@ if mode == "Espace Patient":
     *Vos réponses sont strictement confidentielles et seront analysées uniquement par votre thérapeute.*
     """)
     
-    options_reponse = [1, 2, 3, 4, 5, 6]
-
     with st.form("form_patient", clear_on_submit=False):
         c1, c2 = st.columns(2)
         nom = c1.text_input("Votre Nom et Prénom *")
@@ -417,7 +507,7 @@ if mode == "Espace Patient":
                     st.write(f"**{q_num}.** {q_text}")
                     reponses[f"Q{q_num}"] = st.pills(
                         f"Choix Q{q_num}",
-                        options=options_reponse,
+                        options=[1, 2, 3, 4, 5, 6],
                         selection_mode="single",
                         label_visibility="collapsed",
                         key=f"q_{q_num}"
@@ -474,10 +564,45 @@ elif mode == "Espace Thérapeute":
                         st.rerun()
             
             st.markdown("---")
+            
+            # --- BOUTONS D'ACTION DU DOSSIER ---
+            col_analyse, col_raw = st.columns(2)
+            
+            patient_data = df[df["id"] == selected_id].iloc[0]
+            reponses_dict = json.loads(patient_data["reponses_json"])
 
-            if st.button("📊 Générer le Bilan Complet"):
-                patient_data = df[df["id"] == selected_id].iloc[0]
-                reponses_dict = json.loads(patient_data["reponses_json"])
+            # 1. GÉNÉRATION FICHIER RÉPONSES BRUTES (NOUVEAU)
+            def generate_raw_responses():
+                doc = Document()
+                doc.add_heading(f"Détail des Réponses : {patient_data['nom']}", 0)
+                doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
+                
+                for i, (domaine, q_dict) in enumerate(YSQ_QUESTIONS.items()):
+                    doc.add_heading(domaine, level=2)
+                    for q_num, q_text in q_dict.items():
+                        score = reponses_dict.get(f"Q{q_num}", "-")
+                        p = doc.add_paragraph()
+                        p.add_run(f"Q{q_num}. ").bold = True
+                        p.add_run(f"{q_text} : ")
+                        runner = p.add_run(f"[{score}/6]")
+                        runner.bold = True
+                        if score != "-" and int(score) >= 5:
+                            runner.font.color.rgb = RGBColor(255, 0, 0)
+                
+                out = BytesIO()
+                doc.save(out)
+                return out.getvalue()
+            
+            with col_raw:
+                st.download_button(
+                    "📄 Télécharger les Réponses Brutes (Dossier)",
+                    generate_raw_responses(),
+                    f"Reponses_Brutes_{patient_data['nom']}.docx",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+
+            # 2. ANALYSE EXPERTE ET RAPPORT
+            if st.button("📊 Lancer l'Analyse Clinique Complète"):
                 
                 # Calculs
                 resultats = []
@@ -511,42 +636,68 @@ elif mode == "Espace Thérapeute":
                 c1, c2 = st.columns(2)
                 with c1: st.table(df_res)
                 with c2:
+                    # Radar Chart
                     fig_radar = px.line_polar(df_res, r='Moyenne', theta='Code', line_close=True, range_r=[0,6])
                     fig_radar.update_traces(fill='toself', line_color='blue')
                     st.plotly_chart(fig_radar)
                     
-                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color='Moyenne', color_continuous_scale='Blues')
+                    # Bar Chart avec Couleurs Lisibles (Vert/Orange/Rouge)
+                    # On crée une colonne couleur pour la lisibilité
+                    df_res["Color"] = df_res["Moyenne"].apply(lambda x: "red" if x > 3.5 else ("orange" if x >= 2.5 else "green"))
+                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color="Color", color_discrete_map={"red": "#d32f2f", "orange": "#f57c00", "green": "#388e3c"})
+                    fig_bar.update_layout(showlegend=False)
                     st.plotly_chart(fig_bar)
 
                 def generate_word_expert():
                     doc = Document()
                     doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
                     
-                    doc.add_heading('1. Visualisation', level=1)
+                    doc.add_heading('1. Visualisation Clinique', level=1)
                     try:
                         img_radar = fig_radar.to_image(format="png", engine="kaleido")
-                        doc.add_picture(BytesIO(img_radar), width=Inches(5))
-                    except: doc.add_paragraph("[Graphique indisponible]")
+                        doc.add_picture(BytesIO(img_radar), width=Inches(4.5))
+                        img_bar = fig_bar.to_image(format="png", engine="kaleido")
+                        doc.add_picture(BytesIO(img_bar), width=Inches(4.5))
+                    except: doc.add_paragraph("[Graphiques indisponibles - Vérifier Kaleido]")
 
-                    doc.add_heading('2. Analyse par Domaine', level=1)
+                    doc.add_heading('2. Analyse Clinique & Pastorale par Domaine', level=1)
+                    
                     if active_codes:
                         for domain_name, domain_info in YOUNG_DOMAINS_INFO.items():
                             match = [c for c in domain_info["codes"] if c in active_codes]
                             if match:
                                 doc.add_heading(domain_name, level=2)
-                                doc.add_paragraph(domain_info["besoin"]).italic = True
+                                p_besoin = doc.add_paragraph(domain_info["besoin"])
+                                p_besoin.italic = True
+                                
                                 for c in match:
                                     info = INTERPRETATIONS_EXPERTES[c]
-                                    doc.add_paragraph(f"🔹 {info['titre']}").bold = True
-                                    doc.add_paragraph(f"Diagnostic : {info['desc']}")
-                                    doc.add_paragraph(f"Piste Pastorale : {info['biblique']}").bold = True
-                                    doc.add_paragraph(f"Verset : {info['verset']}").italic = True
+                                    # Titre Schéma
+                                    p = doc.add_paragraph()
+                                    p.add_run(f"\n🔹 {info['titre']}").bold = True
+                                    p.add_run(f" (Moyenne: {df_res.loc[df_res['Code'] == c, 'Moyenne'].values[0]})")
+                                    
+                                    # Analyse Clinique
+                                    doc.add_paragraph("Analyse Clinique :").bold = True
+                                    doc.add_paragraph(info['clinique'])
+                                    
+                                    # Analyse Théologique
+                                    doc.add_paragraph("Perspective Biblique & Restauration :").bold = True
+                                    doc.add_paragraph(info['theologie'])
+                                    
+                                    # Verset
+                                    p_verset = doc.add_paragraph()
+                                    p_verset.add_run("Verset d'ancrage : ").bold = True
+                                    p_verset.add_run(info['verset']).italic = True
+                                    doc.add_paragraph("-" * 20)
+                    else:
+                        doc.add_paragraph("Aucun schéma significatif détecté (scores < 5).")
                     
                     out = BytesIO()
                     doc.save(out)
                     return out.getvalue()
 
-                st.download_button("📥 Télécharger le Rapport Expert", generate_word_expert(), f"Bilan_{patient_data['nom']}.docx")
+                st.download_button("📥 Télécharger le Rapport Expert (Avec Graphiques)", generate_word_expert(), f"Bilan_Expert_{patient_data['nom']}.docx")
 
     elif pwd_input:
         st.error("Mot de passe incorrect.")
@@ -556,8 +707,8 @@ st.markdown("---")
 with st.expander("🔒 Confidentialité et Protection des Données"):
     st.markdown("""
     **Engagement de confidentialité :**
-    * Les données recueillies sont strictement confidentielles.
+    * Les données recueillies via ce formulaire sont strictement confidentielles.
     * Seul votre thérapeute a accès aux résultats détaillés.
-    * Vous pouvez demander la suppression de vos données à tout moment.
+    * Conformément à la loi, vous pouvez demander à tout moment la suppression intégrale de vos réponses.
     """)
-    st.caption("Application YSQ-L3 révisée. pour usage ne relation d'aide chrétienne © 2026 la Barque.")
+    st.caption("Outil clinique YSQ-L3. Usage professionnel uniquement pour relation d'aide chrétienne- La Barque 2026.")
