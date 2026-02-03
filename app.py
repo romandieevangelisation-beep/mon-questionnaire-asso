@@ -982,7 +982,7 @@ elif mode == "Espace Thérapeute":
                     fig_bar.update_layout(showlegend=False)
                     st.plotly_chart(fig_bar)
 
-              # ==============================================================================
+# ==============================================================================
 # 2. FONCTION DE GÉNÉRATION DU RAPPORT (ADAPTÉE AUX NOUVELLES DONNÉES)
 # ==============================================================================
 def generate_word_expert(patient_data, df_res, active_codes):
@@ -1051,7 +1051,7 @@ def generate_word_expert(patient_data, df_res, active_codes):
     
     out = BytesIO(); doc.save(out); return out.getvalue()
 
-                st.download_button("📥 Télécharger le Rapport Expert (Complet)", generate_word_expert(), f"Bilan_Expert_{patient_data['nom']}.docx")
+    st.download_button("📥 Télécharger le Rapport Expert (Complet)", generate_word_expert(), f"Bilan_Expert_{patient_data['nom']}.docx")
 
     elif pwd_input:
         st.error("Mot de passe incorrect.")
