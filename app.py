@@ -882,135 +882,247 @@ if mode == "Espace Patient":
                         st.balloons()
 
 # ==============================================================================
-# 2. ESPACE THÉRAPEUTE
+# 2. ESPACE THÉRAPEUTE (ADMIN)
 # ==============================================================================
 elif mode == "Espace Thérapeute":
     st.sidebar.divider()
     pwd_input = st.sidebar.text_input("Mot de passe Admin", type="password")
     
-    if pwd_input == st.secrets["ADMIN_PASSWORD"]:
+    if "ADMIN_PASSWORD" in st.secrets and pwd_input == st.secrets["ADMIN_PASSWORD"]:
         st.header("🔒 Tableau de Bord Clinique Expert")
         df = load_all_patients()
         
-        if df.empty: st.info("Aucun dossier.")
+        if df.empty:
+            st.info("Aucun dossier pour le moment.")
         else:
+            # Sélecteur de dossier
+            st.markdown("### Gestion des Dossiers")
             st.dataframe(df[["created_at", "nom", "email"]], use_container_width=True)
             st.divider()
             
             c_select, c_action = st.columns([3, 1])
             with c_select:
                 patient_options = {f"{row['nom']} ({row['created_at'][:16]})": row['id'] for index, row in df.iterrows()}
-                sel_label = st.selectbox("Sélectionner un dossier :", list(patient_options.keys()))
-                sel_id = patient_options[sel_label]
+                selected_label = st.selectbox("Sélectionner un dossier :", list(patient_options.keys()))
+                selected_id = patient_options[selected_label]
+            
             with c_action:
                 st.write(""); st.write("")
                 if st.button("🗑️ Supprimer", type="primary"):
-                    if delete_patient(sel_id): st.success("Supprimé."); st.rerun()
+                    if delete_patient(selected_id):
+                        st.success("Dossier supprimé.")
+                        st.rerun()
             
             st.markdown("---")
-            col_raw, col_an = st.columns(2)
-            pat_data = df[df["id"] == sel_id].iloc[0]
-            reponses_dict = decrypt_reponses(pat_data["reponses_json"])
-
-            # 1. FICHIER BRUT
-            def gen_raw():
-                doc = Document()
-                doc.add_heading(f"Réponses Brutes : {pat_data['nom']}", 0)
-                for i, (dom, q_d) in enumerate(YSQ_QUESTIONS.items()):
-                    doc.add_heading(dom, 2)
-                    for q, t in q_d.items():
-                        s = reponses_dict.get(f"Q{q}", "-")
-                        p = doc.add_paragraph(); p.add_run(f"Q{q}. ").bold=True; p.add_run(f"{t} : [{s}/6]")
-                        if s != "-" and int(s) >= 5: p.runs[-1].font.color.rgb = RGBColor(255, 0, 0)
-                out = BytesIO(); doc.save(out); return out.getvalue()
             
-            with col_raw: st.download_button("📄 Télécharger Réponses Brutes", gen_raw(), f"Reponses_{pat_data['nom']}.docx")
+            # Récupération et Déchiffrement des données
+            patient_data = df[df["id"] == selected_id].iloc[0]
+            try:
+                reponses_dict = decrypt_reponses(patient_data["reponses_json"])
+            except:
+                st.error("Erreur de déchiffrement. La clé a peut-être changé.")
+                reponses_dict = {}
 
-            # 2. EXPERT REPORT
-            if st.button("📊 Lancer l'Analyse Clinique"):
-                res, active = [], []
-                for dom, q_d in YSQ_QUESTIONS.items():
-                    c = dom.split(" : ")[0]; n = dom.split(" : ")[1]
-                    sc = [reponses_dict.get(f"Q{k}", 1) or 1 for k in q_d.keys()]
-                    moy = sum(sc)/len(sc)
-                    sev = len([x for x in sc if x>=5])
-                    if sev>0: active.append(c)
-                    niv = "🔴 IMPORTANT" if moy>3.5 else ("🟡 Moyen" if moy>=2.5 else "🟢 Faible")
-                    res.append({"Code": c, "Schéma": n, "Moyenne": round(moy, 2), "Niveau": niv})
+            # --- BOUTONS D'ACTION ---
+            col_raw, col_analyse = st.columns(2)
+
+            # 1. FICHIER RÉPONSES BRUTES
+            def generate_raw_responses():
+                doc = Document()
+                doc.add_heading(f"Détail des Réponses : {patient_data['nom']}", 0)
+                doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
+                for i, (domaine, q_dict) in enumerate(YSQ_QUESTIONS.items()):
+                    doc.add_heading(domaine, level=2)
+                    for q_num, q_text in q_dict.items():
+                        score = reponses_dict.get(f"Q{q_num}", "-")
+                        p = doc.add_paragraph()
+                        p.add_run(f"Q{q_num}. ").bold = True
+                        p.add_run(f"{q_text} : ")
+                        runner = p.add_run(f"[{score}/6]")
+                        runner.bold = True
+                        # Met en rouge si score élevé
+                        if str(score).isdigit() and int(score) >= 5:
+                            runner.font.color.rgb = RGBColor(255, 0, 0)
+                out = BytesIO()
+                doc.save(out)
+                return out.getvalue()
+            
+            with col_raw:
+                st.download_button("📄 Télécharger les Réponses Brutes", generate_raw_responses(), f"Reponses_{patient_data['nom']}.docx")
+
+            # 2. ANALYSE EXPERTE ET GÉNÉRATION DU RAPPORT COMPLET
+            if st.button("📊 Lancer l'Analyse Clinique Complète"):
                 
-                df_res = pd.DataFrame(res)
+                # --- CALCULS DES SCORES ---
+                resultats = []
+                active_codes = []
+                
+                for domaine, q_dict in YSQ_QUESTIONS.items():
+                    code = domaine.split(" : ")[0]
+                    nom_sch = domaine.split(" : ")[1]
+                    # Récupère les scores (valeur 1 par défaut si vide)
+                    scores = [int(reponses_dict.get(f"Q{k}", 1) or 1) for k in q_dict.keys()]
+                    
+                    if scores:
+                        moy = sum(scores) / len(scores)
+                        sev = len([x for x in scores if x >= 5])
+                        pct = (sev / len(scores)) * 100
+                        etoile = "⭐" if sev > 0 else ""
+                        
+                        if sev > 0: # On considère le schéma actif s'il y a des réponses sévères
+                            active_codes.append(code)
+                        
+                        niv = "🟢 Faible"
+                        if moy > 3.5: niv = "🔴 IMPORTANT"
+                        elif moy >= 2.5: niv = "🟡 Moyen"
+                        
+                        resultats.append({
+                            "Code": code,
+                            "Schéma": f"{nom_sch} {etoile}",
+                            "Moyenne": round(moy, 2),
+                            "% Sévérité": f"{round(pct, 1)}%",
+                            "Niveau": niv
+                        })
+                
+                df_res = pd.DataFrame(resultats)
+                
+                # --- AFFICHAGE ÉCRAN ---
                 c1, c2 = st.columns(2)
-                with c1: st.table(df_res)
+                with c1:
+                    st.table(df_res)
                 with c2:
-                    fig = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color="Moyenne", color_continuous_scale="RdYlGn_r")
-                    st.plotly_chart(fig)
+                    # Bar Chart avec couleurs dynamiques
+                    df_res["Color"] = df_res["Moyenne"].apply(lambda x: "red" if x > 3.5 else ("orange" if x >= 2.5 else "green"))
+                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], 
+                                     color="Color", 
+                                     color_discrete_map={"red": "#d32f2f", "orange": "#f57c00", "green": "#388e3c"},
+                                     title="Profil des Schémas")
+                    fig_bar.update_layout(showlegend=False)
+                    st.plotly_chart(fig_bar)
 
-                def gen_expert():
+                # --- GÉNÉRATION WORD (FONCTION COMPLEXE INCLUSE ICI) ---
+                def generate_word_expert_full():
                     doc = Document()
-                    doc.add_heading(f"Bilan Expert : {pat_data['nom']}", 0)
+                    doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
+                    doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
                     
-                    doc.add_heading('1. Synthèse Visuelle', 1)
-                    try: doc.add_picture(BytesIO(fig.to_image(format="png", engine="kaleido")), width=Inches(6))
-                    except: doc.add_paragraph("[Graphique indisponible]")
+                    # 1. Graphiques
+                    doc.add_heading('1. Visualisation Clinique', level=1)
+                    try:
+                        img_bar = fig_bar.to_image(format="png", engine="kaleido")
+                        doc.add_picture(BytesIO(img_bar), width=Inches(6))
+                    except:
+                        doc.add_paragraph("[Graphique non disponible]")
 
-                    doc.add_heading('2. Tableau des Scores', 1)
-                    tbl = doc.add_table(rows=1, cols=3); tbl.style = 'Table Grid'
-                    h = tbl.rows[0].cells; h[0].text="Schéma"; h[1].text="Score"; h[2].text="Niveau"
-                    for _, r in df_res.iterrows():
-                        row = tbl.add_row().cells
-                        row[0].text = r['Schéma']; row[1].text = str(r['Moyenne'])
-                        run = row[2].paragraphs[0].add_run(r['Niveau']); run.bold = True
-                        if "IMPORTANT" in r['Niveau']: run.font.color.rgb = RGBColor(255, 0, 0)
-                        elif "Moyen" in r['Niveau']: run.font.color.rgb = RGBColor(255, 140, 0)
-                        else: run.font.color.rgb = RGBColor(0, 128, 0)
+                    # 2. Tableau Récapitulatif
+                    doc.add_heading('2. Tableau de Synthèse', level=1)
+                    table = doc.add_table(rows=1, cols=4)
+                    table.style = 'Table Grid'
+                    hdr = table.rows[0].cells
+                    hdr[0].text = "Code"
+                    hdr[1].text = "Schéma"
+                    hdr[2].text = "Score /6"
+                    hdr[3].text = "Niveau"
+                    
+                    for _, row in df_res.iterrows():
+                        cells = table.add_row().cells
+                        cells[0].text = str(row['Code'])
+                        cells[1].text = str(row['Schéma'])
+                        cells[2].text = str(row['Moyenne'])
+                        
+                        run = cells[3].paragraphs[0].add_run(row['Niveau'])
+                        run.bold = True
+                        if "IMPORTANT" in row['Niveau']:
+                            run.font.color.rgb = RGBColor(255, 0, 0) # Rouge
+                        elif "Moyen" in row['Niveau']:
+                            run.font.color.rgb = RGBColor(255, 140, 0) # Orange
+                        else:
+                            run.font.color.rgb = RGBColor(0, 128, 0) # Vert
 
-                    doc.add_heading('3. Analyse Intégrale', 1)
-                    if active:
-                        for d_name, d_info in YOUNG_DOMAINS_INFO.items():
-                            match = [c for c in d_info["codes"] if c in active]
+                    # 3. Analyse Détaillée (La partie riche)
+                    doc.add_heading('3. Analyse Approfondie & Plan d\'Action', level=1)
+                    
+                    if active_codes:
+                        for domain_name, domain_info in YOUNG_DOMAINS_INFO.items():
+                            # Filtrer les schémas actifs dans ce domaine
+                            match = [c for c in domain_info["codes"] if c in active_codes]
+                            
                             if match:
-                                doc.add_heading(d_name, 2)
-                                doc.add_paragraph(d_info["besoin"]).italic = True
+                                doc.add_heading(domain_name, level=2)
+                                p_besoin = doc.add_paragraph(domain_info["besoin"])
+                                p_besoin.italic = True
+                                
                                 for c in match:
-                                    inf = DATA_SCHEMAS[c]
+                                    # Récupération des données riches
+                                    inf = DATA_SCHEMAS.get(c, {})
+                                    if not inf: continue # Sécurité
+                                    
+                                    # Titre
                                     p = doc.add_paragraph()
-                                    p.add_run(f"\n🔹 {inf['titre']}").bold = True
-                                    p.add_run(f" - {inf['slogan']}").italic = True
+                                    p.add_run(f"\n🔹 {inf.get('titre', c)}").bold = True
+                                    p.add_run(f" - {inf.get('slogan', '')}").italic = True
+                                    p.add_run(f" (Score: {df_res.loc[df_res['Code'] == c, 'Moyenne'].values[0]})")
                                     
-                                    # PARTIE EXPERT V9
+                                    # A. Analyse Expert
                                     doc.add_paragraph("Analyse Clinique (Expert) :").bold = True
-                                    doc.add_paragraph(inf['clinique_expert'])
+                                    doc.add_paragraph(inf.get('clinique_expert', ''))
+                                    
                                     doc.add_paragraph("Perspective Théologique :").bold = True
-                                    doc.add_paragraph(inf['theologie_expert'])
+                                    doc.add_paragraph(inf.get('theologie_expert', ''))
                                     
-                                    # PARTIE ORIGINES & SYMPTÔMES (WORD DOC)
-                                    doc.add_paragraph("Origines Possibles :").bold = True
-                                    for o in inf['origines']: doc.add_paragraph(f"- {o}", style='List Bullet')
-                                    doc.add_paragraph("Signes au Quotidien :").bold = True
-                                    for s in inf['symptomes']: doc.add_paragraph(f"- {s}", style='List Bullet')
+                                    # B. Origines (Liste à puces)
+                                    if 'origines' in inf:
+                                        doc.add_paragraph("Origines & Développement :").bold = True
+                                        for item in inf['origines']:
+                                            doc.add_paragraph(f"- {item}", style='List Bullet')
+
+                                    # C. Symptômes (Liste à puces)
+                                    if 'symptomes' in inf:
+                                        doc.add_paragraph("Signes au Quotidien :").bold = True
+                                        for item in inf['symptomes']:
+                                            doc.add_paragraph(f"- {item}", style='List Bullet')
                                     
-                                    # MECANISME SPECIFIQUE
-                                    doc.add_paragraph(f"Mécanisme Clé : {inf['mecanisme_titre']}").bold = True
-                                    doc.add_paragraph(inf['mecanisme_texte'])
+                                    # D. Mécanisme Spécifique
+                                    if 'mecanisme_titre' in inf:
+                                        doc.add_paragraph(f"Mécanisme Clé : {inf['mecanisme_titre']}").bold = True
+                                        doc.add_paragraph(inf.get('mecanisme_texte', ''))
                                     
-                                    # PLAN D'ACTION (FUSION)
+                                    # E. Plan d'Action (Fusion)
                                     doc.add_paragraph("👉 Plan d'Action Intégratif :").bold = True
-                                    doc.add_paragraph("Stratégies Thérapeutiques :").italic = True
-                                    for act in inf['actions_therapeute']: doc.add_paragraph(f"• {act}")
                                     
-                                    doc.add_paragraph("Conseil Pastoral :").italic = True
-                                    doc.add_paragraph(inf['action_pastorale'])
+                                    if 'actions_therapeute' in inf:
+                                        doc.add_paragraph("Stratégies Thérapeutiques :").italic = True
+                                        for act in inf['actions_therapeute']:
+                                            doc.add_paragraph(f"• {act}")
+                                            
+                                    if 'action_pastorale' in inf:
+                                        doc.add_paragraph("Conseil Pastoral :").italic = True
+                                        p_past = doc.add_paragraph(inf['action_pastorale'])
+                                        p_past.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                                     
-                                    p_v = doc.add_paragraph(); p_v.add_run("Verset d'ancrage : ").bold = True
-                                    p_v.add_run(inf['verset']).italic = True
+                                    # Verset
+                                    p_verset = doc.add_paragraph()
+                                    p_verset.add_run("Verset d'ancrage : ").bold = True
+                                    p_verset.add_run(inf.get('verset', '')).italic = True
+                                    
                                     doc.add_paragraph("-" * 30)
-                    else: doc.add_paragraph("Aucun schéma significatif.")
+                    else:
+                        doc.add_paragraph("Aucun schéma significatif détecté (tous les scores sont < 5).")
                     
-                    out = BytesIO(); doc.save(out); return out.getvalue()
+                    out = BytesIO()
+                    doc.save(out)
+                    return out.getvalue()
 
-                st.download_button("📥 Télécharger Rapport Expert", gen_expert(), f"Bilan_{pat_data['nom']}.docx")
-    elif pwd_input: st.error("Mot de passe incorrect.")
+                # Le bouton de téléchargement appelle la fonction qu'on vient de définir juste au-dessus
+                st.download_button(
+                    "📥 Télécharger le Rapport Expert (Complet)",
+                    generate_word_expert_full(),
+                    f"Bilan_Expert_{patient_data['nom']}.docx",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
 
+    elif pwd_input:
+        st.error("Mot de passe incorrect.")
 # --- FOOTER ---
 st.markdown("---")
 with st.expander("🔒 Confidentialité et Protection des Données"):
