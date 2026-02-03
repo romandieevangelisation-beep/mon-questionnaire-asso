@@ -10,9 +10,10 @@ from io import BytesIO
 import json
 import re
 from supabase import create_client
+from cryptography.fernet import Fernet
 
 # --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="Espace Clinique - YSQ-L3 Expert", layout="wide")
+st.set_page_config(page_title="Espace Clinique - YSQ-L3 Intégral", layout="wide")
 
 # --- CONNEXION SÉCURISÉE (SUPABASE) ---
 @st.cache_resource
@@ -21,11 +22,43 @@ def init_connection():
         url = st.secrets["SUPABASE_URL"]
         key = st.secrets["SUPABASE_KEY"]
         return create_client(url, key)
-    except Exception as e:
-        st.error(f"Erreur de connexion : {e}")
-        return None
-
+    except: return None
 supabase = init_connection()
+# --- 2. SÉCURITÉ & DONNÉES ---
+def get_cipher(): return Fernet(st.secrets["ENCRYPTION_KEY"].encode())
+
+def decrypt_reponses(encrypted_json):
+    """Lecture hybride : tente de déchiffrer, sinon lit en clair (pour compatibilité)"""
+    if not encrypted_json: return {}
+    try:
+        return json.loads(get_cipher().decrypt(encrypted_json.encode()).decode())
+    except:
+        try: return json.loads(encrypted_json)
+        except: return {}
+
+def save_patient_data(nom, email, reponses_dict):
+    if not supabase: return False
+    data = {"nom": nom, "email": email, "reponses_json": json.dumps(reponses_dict), "created_at": datetime.now().isoformat()}
+    try:
+        try: data["reponses_json"] = get_cipher().encrypt(json.dumps(reponses_dict).encode()).decode()
+        except: pass
+        supabase.table("patients_ysq").insert(data).execute()
+        return True
+    except: return False
+
+def load_all_patients():
+    if not supabase: return pd.DataFrame()
+    try:
+        response = supabase.table("patients_ysq").select("*").order("created_at", desc=True).execute()
+        return pd.DataFrame(response.data)
+    except: return pd.DataFrame()
+
+def delete_patient(patient_id):
+    if not supabase: return False
+    try:
+        supabase.table("patients_ysq").delete().eq("id", patient_id).execute()
+        return True
+    except: return False
 
 # ==============================================================================
 # BASE DE DONNÉES MASSIVE & NETTOYÉE (FUSION TOTALE V9 + DOC WORD)
@@ -516,6 +549,13 @@ DATA_SCHEMAS = {
         "verset": "Romains 8:1"
     }
 }
+YOUNG_DOMAINS_INFO = {
+    "Domaine I : Séparation et Rejet": {"codes": ["ED", "AB", "MA", "SI", "DS"], "besoin": "Besoin de sécurité, de stabilité, d'affection et d'appartenance."},
+    "Domaine II : Manque d'Autonomie": {"codes": ["DI", "VU", "EU", "FA"], "besoin": "Besoin de compétence, d'identité propre et de confiance en soi."},
+    "Domaine III : Limites Déficientes": {"codes": ["ET", "IS"], "besoin": "Besoin de limites réalistes, de respect des autres et d'autodiscipline."},
+    "Domaine IV : Orientation vers les Autres": {"codes": ["SB", "SS", "AS"], "besoin": "Besoin de liberté d'expression et d'affirmation de ses besoins."},
+    "Domaine V : Hypervigilance et Inhibition": {"codes": ["NP", "EI", "US", "PU"], "besoin": "Besoin de spontanéité, de plaisir et de lâcher-prise."}
+}
 # --- LES 232 QUESTIONS VALIDÉES (OFFICIELLES) ---
 YSQ_QUESTIONS = {
     "ED : Carence affective": {
@@ -787,422 +827,160 @@ YSQ_QUESTIONS = {
         232: "Je ne crois pas à la deuxième chance."
     }
 }
-# ==============================================================================
-# BLOC TECHNIQUE MANQUANT (SÉCURITÉ & DONNÉES) - À COLLER AU MILIEU
-# ==============================================================================
-
-# --- FONCTIONS DE SÉCURITÉ ---
-def get_cipher():
-    """Récupère la clé secrète pour le chiffrement"""
-    return Fernet(st.secrets["ENCRYPTION_KEY"].encode())
-
-def encrypt_data(data_dict):
-    """Chiffre les données avant l'envoi"""
-    try:
-        cipher = get_cipher()
-        json_str = json.dumps(data_dict)
-        return cipher.encrypt(json_str.encode()).decode()
-    except Exception as e:
-        st.error(f"Erreur de chiffrement : {e}")
-        return json.dumps(data_dict) # Fallback non chiffré si erreur
-
-def decrypt_data(encrypted_str):
-    """Déchiffre les données brutes"""
-    try:
-        cipher = get_cipher()
-        return json.loads(cipher.decrypt(encrypted_str.encode()).decode())
-    except:
-        return None
-
-def decrypt_reponses(encrypted_json):
-    """Fonction intelligente : essaie de déchiffrer, sinon lit en clair (pour compatibilité)"""
-    try:
-        # Tente le déchiffrement sécurisé
-        cipher = get_cipher()
-        return json.loads(cipher.decrypt(encrypted_json.encode()).decode())
-    except:
-        # Si ça échoue (ex: ancienne donnée non chiffrée), on essaie de lire tel quel
-        try:
-            return json.loads(encrypted_json)
-        except:
-            return {} # Si tout échoue, renvoie vide
-
-# --- FONCTIONS BASE DE DONNÉES (SUPABASE) ---
-def save_patient_data(nom, email, reponses_dict):
-    if not supabase:
-        st.error("Erreur : Non connecté à la base de données.")
-        return False
-    
-    # On tente de chiffrer les données
-    final_data_str = encrypt_data(reponses_dict)
-    
-    data = {
-        "nom": nom,
-        "email": email,
-        "reponses_json": final_data_str,
-        "created_at": datetime.now().isoformat()
-    }
-    
-    try:
-        supabase.table("patients_ysq").insert(data).execute()
-        return True
-    except Exception as e:
-        st.error(f"Erreur d'enregistrement : {e}")
-        return False
-
-def load_all_patients():
-    if not supabase: return pd.DataFrame()
-    try:
-        # Récupère tout, trié par date décroissante
-        response = supabase.table("patients_ysq").select("*").order("created_at", desc=True).execute()
-        return pd.DataFrame(response.data)
-    except Exception as e:
-        st.error(f"Erreur de chargement : {e}")
-        return pd.DataFrame()
-
-def delete_patient(patient_id):
-    if not supabase: return False
-    try:
-        supabase.table("patients_ysq").delete().eq("id", patient_id).execute()
-        return True
-    except Exception as e:
-        st.error(f"Erreur de suppression : {e}")
-        return False
-# --- FONCTIONS SUPABASE ---
-def save_patient_data(nom, email, reponses_dict):
-    if not supabase: return False
-    data = {"nom": nom, "email": email, "reponses_json": json.dumps(reponses_dict), "created_at": datetime.now().isoformat()}
-    try:
-        supabase.table("patients_ysq").insert(data).execute()
-        return True
-    except: return False
-
-def load_all_patients():
-    if not supabase: return pd.DataFrame()
-    try:
-        response = supabase.table("patients_ysq").select("*").order("created_at", desc=True).execute()
-        return pd.DataFrame(response.data)
-    except: return pd.DataFrame()
-
-def delete_patient(patient_id):
-    if not supabase: return False
-    try:
-        supabase.table("patients_ysq").delete().eq("id", patient_id).execute()
-        return True
-    except: return False
-
-# --- INTERFACE ---
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=80)
+# --- 4. INTERFACE ---
 st.sidebar.title("Navigation")
 mode = st.sidebar.radio("Aller vers :", ["Espace Patient", "Espace Thérapeute"])
 
-# ==============================================================================
-# 1. ESPACE PATIENT (PUBLIC)
-# ==============================================================================
 if mode == "Espace Patient":
     st.header("Bienvenue dans votre questionnaire des Schémas (YSQ-L3)")
     st.markdown("---")
-    
-    st.info("""
-    ### 💡 Guide pour remplir ce questionnaire
-    
-    Ce questionnaire est un outil précieux pour mieux comprendre votre fonctionnement émotionnel. Il ne s'agit pas d'un examen, mais d'une "photographie" de vos ressentis.
-    
-    **Comment répondre ?**
-    1.  **Soyez spontané(e) :** Ne réfléchissez pas trop longtemps. Votre première impression est souvent la plus juste.
-    2.  **Visez la globalité :** Répondez en fonction de ce que vous ressentez **la plupart du temps** dans votre vie, et pas seulement aujourd'hui.
-    
-    **L'échelle de notation :**
-    * **1** : Ceci est **complètement faux** pour moi.
-    * **2** : C'est **faux dans l'ensemble**, cela ne me ressemble pas vraiment.
-    * **3** : C'est **plutôt vrai** que faux.
-    * **4** : C'est **modérément vrai**, cela me correspond assez souvent.
-    * **5** : C'est **vrai dans l'ensemble**, cela me décrit bien.
-    * **6** : Ceci me décrit **parfaitement**, c'est tout à fait moi.
-    
-    *Vos réponses sont strictement confidentielles et seront analysées uniquement par votre thérapeute.*
-    """)
+    st.info("### 💡 Guide pour remplir ce questionnaire\n\n**Comment répondre ?**\n1.  **Soyez spontané(e) :** Ne réfléchissez pas trop longtemps.\n2.  **Visez la globalité :** Répondez selon ce que vous ressentez **la plupart du temps**.\n\n**L'échelle de notation :**\n* **1** : Complètement faux\n* **2** : Faux dans l'ensemble\n* **3** : Plutôt vrai\n* **4** : Modérément vrai\n* **5** : Vrai dans l'ensemble\n* **6** : Me décrit parfaitement")
     
     with st.form("form_patient", clear_on_submit=False):
         c1, c2 = st.columns(2)
         nom = c1.text_input("Votre Nom et Prénom *")
         email = c2.text_input("Votre Email *")
-        
         reponses = {}
         st.divider()
         
-        # Affichage par séries neutres (Série 1, Série 2...) pour éviter les biais
         for i, (domaine, q_dict) in enumerate(YSQ_QUESTIONS.items()):
             with st.container():
                 st.markdown(f"#### 📝 Série {i+1}")
                 for q_num, q_text in q_dict.items():
                     st.write(f"**{q_num}.** {q_text}")
-                    reponses[f"Q{q_num}"] = st.pills(
-                        f"Choix Q{q_num}",
-                        options=[1, 2, 3, 4, 5, 6],
-                        selection_mode="single",
-                        label_visibility="collapsed",
-                        key=f"q_{q_num}"
-                    )
+                    reponses[f"Q{q_num}"] = st.pills(f"Choix Q{q_num}", options=[1, 2, 3, 4, 5, 6], selection_mode="single", label_visibility="collapsed", key=f"q_{q_num}")
                     st.caption("")
             st.divider()
         
-        submitted = st.form_submit_button("Envoyer mes résultats au thérapeute", type="primary")
-        
-        if submitted:
+        if st.form_submit_button("Envoyer mes résultats", type="primary"):
             missing = [k for k, v in reponses.items() if v is None]
-            if not nom or not email:
-                st.error("⚠️ Oups ! Vous avez oublié de remplir votre **Nom** ou votre **Email** en haut du formulaire.")
-            elif missing:
-                st.warning(f"⚠️ Il manque des réponses à **{len(missing)} questions**. Merci de vérifier les séries incomplètes.")
+            if not nom or not email: st.error("⚠️ Merci de remplir votre nom et email.")
+            elif missing: st.warning(f"⚠️ Il manque {len(missing)} réponse(s).")
             else:
-                with st.spinner("Envoi sécurisé en cours..."):
-                    if save_patient_data(nom, email, reponses):
-                        st.success("✅ Vos réponses ont été bien reçues et enregistrées ! Merci.")
-                        st.balloons()
+                if save_patient_data(nom, email, reponses):
+                    st.success("✅ Vos réponses ont été transmises."); st.balloons()
 
-# ==============================================================================
-# 2. ESPACE THÉRAPEUTE (ADMIN)
-# ==============================================================================
 elif mode == "Espace Thérapeute":
     st.sidebar.divider()
     pwd_input = st.sidebar.text_input("Mot de passe Admin", type="password")
     
-    if "ADMIN_PASSWORD" in st.secrets and pwd_input == st.secrets["ADMIN_PASSWORD"]:
+    if pwd_input == st.secrets["ADMIN_PASSWORD"]:
         st.header("🔒 Tableau de Bord Clinique Expert")
         df = load_all_patients()
         
-        if df.empty:
-            st.info("Aucun dossier pour le moment.")
+        if df.empty: st.info("Aucun dossier.")
         else:
-            # Sélecteur de dossier
-            st.markdown("### Gestion des Dossiers")
             st.dataframe(df[["created_at", "nom", "email"]], use_container_width=True)
             st.divider()
             
             c_select, c_action = st.columns([3, 1])
             with c_select:
                 patient_options = {f"{row['nom']} ({row['created_at'][:16]})": row['id'] for index, row in df.iterrows()}
-                selected_label = st.selectbox("Sélectionner un dossier :", list(patient_options.keys()))
-                selected_id = patient_options[selected_label]
-            
+                sel_label = st.selectbox("Sélectionner un dossier :", list(patient_options.keys()))
+                sel_id = patient_options[sel_label]
             with c_action:
                 st.write(""); st.write("")
                 if st.button("🗑️ Supprimer", type="primary"):
-                    if delete_patient(selected_id):
-                        st.success("Dossier supprimé.")
-                        st.rerun()
+                    if delete_patient(sel_id): st.success("Supprimé."); st.rerun()
             
             st.markdown("---")
-            
-            # Récupération et Déchiffrement des données
-            patient_data = df[df["id"] == selected_id].iloc[0]
-            try:
-                reponses_dict = decrypt_reponses(patient_data["reponses_json"])
-            except:
-                st.error("Erreur de déchiffrement. La clé a peut-être changé.")
-                reponses_dict = {}
+            col_raw, col_an = st.columns(2)
+            pat_data = df[df["id"] == sel_id].iloc[0]
+            reponses_dict = decrypt_reponses(pat_data["reponses_json"])
 
-            # --- BOUTONS D'ACTION ---
-            col_raw, col_analyse = st.columns(2)
-
-            # 1. FICHIER RÉPONSES BRUTES
-            def generate_raw_responses():
+            # 1. FICHIER BRUT
+            def gen_raw():
                 doc = Document()
-                doc.add_heading(f"Détail des Réponses : {patient_data['nom']}", 0)
-                doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
-                for i, (domaine, q_dict) in enumerate(YSQ_QUESTIONS.items()):
-                    doc.add_heading(domaine, level=2)
-                    for q_num, q_text in q_dict.items():
-                        score = reponses_dict.get(f"Q{q_num}", "-")
-                        p = doc.add_paragraph()
-                        p.add_run(f"Q{q_num}. ").bold = True
-                        p.add_run(f"{q_text} : ")
-                        runner = p.add_run(f"[{score}/6]")
-                        runner.bold = True
-                        # Met en rouge si score élevé
-                        if str(score).isdigit() and int(score) >= 5:
-                            runner.font.color.rgb = RGBColor(255, 0, 0)
-                out = BytesIO()
-                doc.save(out)
-                return out.getvalue()
+                doc.add_heading(f"Réponses Brutes : {pat_data['nom']}", 0)
+                for i, (dom, q_d) in enumerate(YSQ_QUESTIONS.items()):
+                    doc.add_heading(dom, 2)
+                    for q, t in q_d.items():
+                        s = reponses_dict.get(f"Q{q}", "-")
+                        p = doc.add_paragraph(); p.add_run(f"Q{q}. ").bold=True; p.add_run(f"{t} : [{s}/6]")
+                        if s != "-" and int(s) >= 5: p.runs[-1].font.color.rgb = RGBColor(255, 0, 0)
+                out = BytesIO(); doc.save(out); return out.getvalue()
             
-            with col_raw:
-                st.download_button("📄 Télécharger les Réponses Brutes", generate_raw_responses(), f"Reponses_{patient_data['nom']}.docx")
+            with col_raw: st.download_button("📄 Télécharger Réponses Brutes", gen_raw(), f"Reponses_{pat_data['nom']}.docx")
 
-            # 2. ANALYSE EXPERTE ET GÉNÉRATION DU RAPPORT COMPLET
-            if st.button("📊 Lancer l'Analyse Clinique Complète"):
+            # 2. EXPERT REPORT
+            if st.button("📊 Lancer l'Analyse Clinique"):
+                res, active = [], []
+                for dom, q_d in YSQ_QUESTIONS.items():
+                    c = dom.split(" : ")[0]; n = dom.split(" : ")[1]
+                    sc = [reponses_dict.get(f"Q{k}", 1) or 1 for k in q_d.keys()]
+                    moy = sum(sc)/len(sc)
+                    sev = len([x for x in sc if x>=5])
+                    if sev>0: active.append(c)
+                    niv = "🔴 IMPORTANT" if moy>3.5 else ("🟡 Moyen" if moy>=2.5 else "🟢 Faible")
+                    res.append({"Code": c, "Schéma": n, "Moyenne": round(moy, 2), "Niveau": niv})
                 
-                # --- CALCULS DES SCORES ---
-                resultats = []
-                active_codes = []
-                
-                for domaine, q_dict in YSQ_QUESTIONS.items():
-                    code = domaine.split(" : ")[0]
-                    nom_sch = domaine.split(" : ")[1]
-                    # Récupère les scores (valeur 1 par défaut si vide)
-                    scores = [int(reponses_dict.get(f"Q{k}", 1) or 1) for k in q_dict.keys()]
-                    
-                    if scores:
-                        moy = sum(scores) / len(scores)
-                        sev = len([x for x in scores if x >= 5])
-                        pct = (sev / len(scores)) * 100
-                        etoile = "⭐" if sev > 0 else ""
-                        
-                        if sev > 0: # On considère le schéma actif s'il y a des réponses sévères
-                            active_codes.append(code)
-                        
-                        niv = "🟢 Faible"
-                        if moy > 3.5: niv = "🔴 IMPORTANT"
-                        elif moy >= 2.5: niv = "🟡 Moyen"
-                        
-                        resultats.append({
-                            "Code": code,
-                            "Schéma": f"{nom_sch} {etoile}",
-                            "Moyenne": round(moy, 2),
-                            "% Sévérité": f"{round(pct, 1)}%",
-                            "Niveau": niv
-                        })
-                
-                df_res = pd.DataFrame(resultats)
-                
-                # --- AFFICHAGE ÉCRAN ---
+                df_res = pd.DataFrame(res)
                 c1, c2 = st.columns(2)
-                with c1:
-                    st.table(df_res)
+                with c1: st.table(df_res)
                 with c2:
-                    # Bar Chart avec couleurs dynamiques
-                    df_res["Color"] = df_res["Moyenne"].apply(lambda x: "red" if x > 3.5 else ("orange" if x >= 2.5 else "green"))
-                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], 
-                                     color="Color", 
-                                     color_discrete_map={"red": "#d32f2f", "orange": "#f57c00", "green": "#388e3c"},
-                                     title="Profil des Schémas")
-                    fig_bar.update_layout(showlegend=False)
-                    st.plotly_chart(fig_bar)
+                    fig = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color="Moyenne", color_continuous_scale="RdYlGn_r")
+                    st.plotly_chart(fig)
 
-                # --- GÉNÉRATION WORD (FONCTION COMPLEXE INCLUSE ICI) ---
-                def generate_word_expert_full():
+                def gen_expert():
                     doc = Document()
-                    doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
-                    doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
+                    doc.add_heading(f"Bilan Expert : {pat_data['nom']}", 0)
                     
-                    # 1. Graphiques
-                    doc.add_heading('1. Visualisation Clinique', level=1)
-                    try:
-                        img_bar = fig_bar.to_image(format="png", engine="kaleido")
-                        doc.add_picture(BytesIO(img_bar), width=Inches(6))
-                    except:
-                        doc.add_paragraph("[Graphique non disponible]")
+                    doc.add_heading('1. Synthèse Visuelle', 1)
+                    try: doc.add_picture(BytesIO(fig.to_image(format="png", engine="kaleido")), width=Inches(6))
+                    except: doc.add_paragraph("[Graphique indisponible]")
 
-                    # 2. Tableau Récapitulatif
-                    doc.add_heading('2. Tableau de Synthèse', level=1)
-                    table = doc.add_table(rows=1, cols=4)
-                    table.style = 'Table Grid'
-                    hdr = table.rows[0].cells
-                    hdr[0].text = "Code"
-                    hdr[1].text = "Schéma"
-                    hdr[2].text = "Score /6"
-                    hdr[3].text = "Niveau"
-                    
-                    for _, row in df_res.iterrows():
-                        cells = table.add_row().cells
-                        cells[0].text = str(row['Code'])
-                        cells[1].text = str(row['Schéma'])
-                        cells[2].text = str(row['Moyenne'])
-                        
-                        run = cells[3].paragraphs[0].add_run(row['Niveau'])
-                        run.bold = True
-                        if "IMPORTANT" in row['Niveau']:
-                            run.font.color.rgb = RGBColor(255, 0, 0) # Rouge
-                        elif "Moyen" in row['Niveau']:
-                            run.font.color.rgb = RGBColor(255, 140, 0) # Orange
-                        else:
-                            run.font.color.rgb = RGBColor(0, 128, 0) # Vert
+                    doc.add_heading('2. Tableau des Scores', 1)
+                    tbl = doc.add_table(rows=1, cols=3); tbl.style = 'Table Grid'
+                    h = tbl.rows[0].cells; h[0].text="Schéma"; h[1].text="Score"; h[2].text="Niveau"
+                    for _, r in df_res.iterrows():
+                        row = tbl.add_row().cells
+                        row[0].text = r['Schéma']; row[1].text = str(r['Moyenne'])
+                        run = row[2].paragraphs[0].add_run(r['Niveau']); run.bold = True
+                        if "IMPORTANT" in r['Niveau']: run.font.color.rgb = RGBColor(255, 0, 0)
+                        elif "Moyen" in r['Niveau']: run.font.color.rgb = RGBColor(255, 140, 0)
+                        else: run.font.color.rgb = RGBColor(0, 128, 0)
 
-                    # 3. Analyse Détaillée (La partie riche)
-                    doc.add_heading('3. Analyse Approfondie & Plan d\'Action', level=1)
-                    
-                    if active_codes:
-                        for domain_name, domain_info in YOUNG_DOMAINS_INFO.items():
-                            # Filtrer les schémas actifs dans ce domaine
-                            match = [c for c in domain_info["codes"] if c in active_codes]
-                            
+                    doc.add_heading('3. Analyse Intégrale', 1)
+                    if active:
+                        for d_name, d_info in YOUNG_DOMAINS_INFO.items():
+                            match = [c for c in d_info["codes"] if c in active]
                             if match:
-                                doc.add_heading(domain_name, level=2)
-                                p_besoin = doc.add_paragraph(domain_info["besoin"])
-                                p_besoin.italic = True
-                                
+                                doc.add_heading(d_name, 2)
+                                doc.add_paragraph(d_info["besoin"]).italic = True
                                 for c in match:
-                                    # Récupération des données riches
-                                    inf = DATA_SCHEMAS.get(c, {})
-                                    if not inf: continue # Sécurité
-                                    
-                                    # Titre
+                                    inf = DATA_SCHEMAS[c]
                                     p = doc.add_paragraph()
-                                    p.add_run(f"\n🔹 {inf.get('titre', c)}").bold = True
-                                    p.add_run(f" - {inf.get('slogan', '')}").italic = True
-                                    p.add_run(f" (Score: {df_res.loc[df_res['Code'] == c, 'Moyenne'].values[0]})")
+                                    p.add_run(f"\n🔹 {inf['titre']}").bold = True
+                                    p.add_run(f" - {inf['slogan']}").italic = True
                                     
-                                    # A. Analyse Expert
                                     doc.add_paragraph("Analyse Clinique (Expert) :").bold = True
-                                    doc.add_paragraph(inf.get('clinique_expert', ''))
-                                    
+                                    doc.add_paragraph(inf['clinique_expert'])
                                     doc.add_paragraph("Perspective Théologique :").bold = True
-                                    doc.add_paragraph(inf.get('theologie_expert', ''))
+                                    doc.add_paragraph(inf['theologie_expert'])
                                     
-                                    # B. Origines (Liste à puces)
-                                    if 'origines' in inf:
-                                        doc.add_paragraph("Origines & Développement :").bold = True
-                                        for item in inf['origines']:
-                                            doc.add_paragraph(f"- {item}", style='List Bullet')
-
-                                    # C. Symptômes (Liste à puces)
-                                    if 'symptomes' in inf:
-                                        doc.add_paragraph("Signes au Quotidien :").bold = True
-                                        for item in inf['symptomes']:
-                                            doc.add_paragraph(f"- {item}", style='List Bullet')
+                                    doc.add_paragraph("Origines & Développement :").bold = True
+                                    for o in inf['origines']: doc.add_paragraph(f"- {o}", style='List Bullet')
+                                    doc.add_paragraph("Signes au Quotidien :").bold = True
+                                    for s in inf['symptomes']: doc.add_paragraph(f"- {s}", style='List Bullet')
                                     
-                                    # D. Mécanisme Spécifique
-                                    if 'mecanisme_titre' in inf:
-                                        doc.add_paragraph(f"Mécanisme Clé : {inf['mecanisme_titre']}").bold = True
-                                        doc.add_paragraph(inf.get('mecanisme_texte', ''))
+                                    doc.add_paragraph(f"Mécanisme Clé : {inf['mecanisme_titre']}").bold = True
+                                    doc.add_paragraph(inf['mecanisme_texte'])
                                     
-                                    # E. Plan d'Action (Fusion)
                                     doc.add_paragraph("👉 Plan d'Action Intégratif :").bold = True
+                                    doc.add_paragraph("Stratégies Thérapeutiques :").italic = True
+                                    for act in inf['actions_therapeute']: doc.add_paragraph(f"• {act}")
+                                    doc.add_paragraph("Conseil Pastoral :").italic = True
+                                    doc.add_paragraph(inf['action_pastorale'])
                                     
-                                    if 'actions_therapeute' in inf:
-                                        doc.add_paragraph("Stratégies Thérapeutiques :").italic = True
-                                        for act in inf['actions_therapeute']:
-                                            doc.add_paragraph(f"• {act}")
-                                            
-                                    if 'action_pastorale' in inf:
-                                        doc.add_paragraph("Conseil Pastoral :").italic = True
-                                        p_past = doc.add_paragraph(inf['action_pastorale'])
-                                        p_past.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-                                    
-                                    # Verset
-                                    p_verset = doc.add_paragraph()
-                                    p_verset.add_run("Verset d'ancrage : ").bold = True
-                                    p_verset.add_run(inf.get('verset', '')).italic = True
-                                    
+                                    p_v = doc.add_paragraph(); p_v.add_run("Verset d'ancrage : ").bold = True
+                                    p_v.add_run(inf['verset']).italic = True
                                     doc.add_paragraph("-" * 30)
-                    else:
-                        doc.add_paragraph("Aucun schéma significatif détecté (tous les scores sont < 5).")
+                    else: doc.add_paragraph("Aucun schéma significatif.")
                     
-                    out = BytesIO()
-                    doc.save(out)
-                    return out.getvalue()
+                    out = BytesIO(); doc.save(out); return out.getvalue()
 
-                # Le bouton de téléchargement appelle la fonction qu'on vient de définir juste au-dessus
-                st.download_button(
-                    "📥 Télécharger le Rapport Expert (Complet)",
-                    generate_word_expert_full(),
-                    f"Bilan_Expert_{patient_data['nom']}.docx",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-
-    elif pwd_input:
-        st.error("Mot de passe incorrect.")
+                st.download_button("📥 Télécharger Rapport Expert", gen_expert(), f"Bilan_{pat_data['nom']}.docx")
+    else: st.error("Mot de passe incorrect.")
 # --- FOOTER ---
 st.markdown("---")
 with st.expander("🔒 Confidentialité et Protection des Données"):
