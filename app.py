@@ -28,487 +28,494 @@ def init_connection():
 supabase = init_connection()
 
 # ==============================================================================
-# BASE DE DONNÉES CLINIQUES & THÉOLOGIQUES (FUSION TOTALE)
+# BASE DE DONNÉES MASSIVE & NETTOYÉE (FUSION TOTALE V9 + DOC WORD)
 # ==============================================================================
 DATA_SCHEMAS = {
     "ED": {
         "titre": "Carence Affective",
-        [cite_start]"slogan": "« Personne ne me considère ou ne m'aime vraiment » [cite: 128]",
-        # V9 EXPERT (Votre demande de solidité)
-        "clinique_expert": "Ce schéma signale un vide émotionnel précoce (alexithymie). Le patient a intégré la croyance que ses besoins de chaleur, d'empathie et de protection ne seront jamais validés.",
-        "theologie_expert": "Le mensonge racine est l'orphelinat spirituel. La guérison passe par la doctrine de l'Adoption (Rom 8:15). Dieu est un Père qui s'incline pour nourrir (Osée 11:4).",
-        # INFOS DU FICHIER WORD
+        "slogan": "« Personne ne me considère, ne se soucie de moi ou ne m'aime vraiment »",
+        "clinique_expert": "Ce schéma signale un vide émotionnel précoce (alexithymie). Le patient a intégré la croyance que ses besoins de chaleur, d'empathie et de protection ne seront jamais validés par autrui.",
+        "theologie_expert": "Le mensonge racine est l'orphelinat spirituel. La guérison passe par la doctrine de l'Adoption (Romains 8:15). Dieu n'est pas un observateur distant mais un Père qui s'incline pour nourrir (Osée 11:4).",
         "origines": [
-            [cite_start]"Le soignant ne répondait pas aux besoins d'affection, d'empathie ou de protection[cite: 136].",
-            [cite_start]"Parents froids, absents ou ne reconnaissant pas les signaux de l'enfant [cite: 138-140].",
-            "L'enfant ne s'est pas senti 'spécial' ou compris."
+            "Le soignant ne reconnaissait pas les signaux de l'enfant ou ne pouvait pas y répondre.",
+            "Parents froids, absents ou distants émotionnellement.",
+            "Absence de 'miroir' émotionnel : l'enfant ne s'est pas senti compris.",
+            "Soignant malade ou déprimé n'ayant pas les ressources pour donner."
         ],
         "symptomes": [
-            [cite_start]"Sentiment chronique de vide ou de solitude[cite: 143].",
-            [cite_start]"Considérer ses propres besoins comme sans importance[cite: 144].",
-            [cite_start]"Devenir dépendant/collant ou au contraire froid/distant[cite: 147].",
-            [cite_start]"Ressentiment envers les autres qui 'ne donnent pas assez'[cite: 148]."
+            "Sentiment chronique de vide ou de solitude.",
+            "Considérer ses propres besoins comme sans importance ou 'trop' pour les autres.",
+            "Devenir dépendant/collant ou au contraire froid/distant (contre-dépendant).",
+            "Ressentiment envers les autres qui 'ne donnent pas assez'.",
+            "Ne pas dire ce dont on a besoin, puis être déçu que l'autre ne devine pas."
         ],
         "mecanisme_titre": "Les 3 Formes de Privation",
-        "mecanisme_texte": "1. Privation d'Attention (manque de chaleur).\n2. Privation d'Empathie (manque d'écoute).\n3. [cite_start]Privation de Protection (manque de guidance) [cite: 132-134][cite_start].\nRéaction fréquente : Ne pas dire ce dont on a besoin puis être déçu[cite: 162].",
+        "mecanisme_texte": "1. Privation d'Attention (manque de chaleur, d'affection physique).\n2. Privation d'Empathie (manque d'écoute, de compréhension profonde).\n3. Privation de Protection (manque de guidance, de force, de direction).",
         "actions_therapeute": [
-            [cite_start]"Soyez à l'écoute de vos besoins de protection et d'empathie[cite: 177].",
-            [cite_start]"Exprimez vos besoins de manière assertive ('J'ai besoin de...')[cite: 181].",
-            [cite_start]"Évitez les partenaires froids qui recréent la privation familière[cite: 180]."
+            "Soyez à l'écoute de vos besoins de protection et d'empathie.",
+            "Exprimez vos besoins de manière assertive ('J'ai besoin de...') sans attendre qu'on les devine.",
+            "Évitez les partenaires froids qui génèrent une 'alchimie' familière mais toxique."
         ],
-        "action_pastorale": "Tenez un journal de vos besoins devant Dieu. Osez demander une petite chose simple à un proche sans vous excuser, comme un acte de foi que vous méritez l'amour (Psaume 27:10).",
+        "action_pastorale": "Tenez un journal de vos besoins devant Dieu. Chaque jour, notez une émotion et présentez-la au Père. Osez demander une petite chose simple à un proche sans vous excuser, comme un acte de foi que vous méritez l'amour.",
         "verset": "Psaume 27:10"
     },
     "AB": {
         "titre": "Abandon / Instabilité",
-        [cite_start]"slogan": "« Ne me quitte pas » [cite: 2]",
-        "clinique_expert": "Perception de l'instabilité fondamentale des liens. Hypervigilance de la perte, alternant entre agrippement anxieux et évitement préventif.",
-        "theologie_expert": "L'antidote est la théologie de l'Alliance (Berit). Contrairement aux alliances humaines, celle de Dieu est irrévocable (Hébreux 13:5).",
+        "slogan": "« Ne me quitte pas »",
+        "clinique_expert": "Perception de l'instabilité fondamentale des liens. Le patient vit dans l'hypervigilance de la perte, alternant entre agrippement anxieux et évitement préventif pour ne pas souffrir.",
+        "theologie_expert": "L'antidote est la théologie de l'Alliance (Berit). Contrairement aux alliances humaines brisées, l'Alliance divine est unilatérale et irrévocable, fondée sur la fidélité de Dieu (Hébreux 13:5).",
         "origines": [
-            [cite_start]"Décès d'un parent ou départ du foyer dans l'enfance[cite: 8].",
-            [cite_start]"Soignant instable (dépression, alcool) ou imprévisible[cite: 10].",
-            [cite_start]"Surprotection familiale rendant la séparation angoissante[cite: 13]."
+            "Décès d'un parent, divorce ou départ du foyer dans l'enfance.",
+            "Soignant instable (dépression, alcool) ou imprévisible.",
+            "Surprotection familiale rendant la séparation angoissante (toute séparation est vécue comme un danger).",
+            "Arrivée d'un nouveau frère/sœur vécue comme un remplacement."
         ],
         "symptomes": [
-            [cite_start]"S'accrocher aux gens par peur (agrippement)[cite: 40].",
-            [cite_start]"Jalousie excessive et possessivité[cite: 18].",
-            [cite_start]"Accusations injustifiées d'infidélité ou d'abandon[cite: 20]."
+            "S'accrocher aux gens par peur (agrippement, jalousie).",
+            "Interpréter des gestes insignifiants comme des signes de départ.",
+            "Possessivité excessive ou accusations injustifiées d'infidélité.",
+            "Partir le premier pour ne pas être quitté (attaque préventive)."
         ],
         "mecanisme_titre": "Le Cycle de l'Abandon",
-        "mecanisme_texte": "1. Anxiété (recherche éperdue). 2. Colère/Désespoir (protestation). 3. [cite_start]Détachement (repli sur soi) [cite: 31-38]. Ce cycle de l'enfance se répète dans les relations adultes.",
+        "mecanisme_texte": "1. Anxiété (recherche éperdue de l'autre). \n2. Colère/Désespoir (protestation quand l'autre n'est pas là). \n3. Détachement (repli sur soi, indifférence apparente). Ce cycle de l'enfance se répète dans les relations adultes.",
         "actions_therapeute": [
-            [cite_start]"Repérez votre tendance à dramatiser les séparations[cite: 48].",
-            [cite_start]"Apprenez à vous apaiser seul(e) quand l'autre est absent[cite: 51].",
-            [cite_start]"Évitez les partenaires instables ou ambivalents[cite: 50]."
+            "Repérez votre tendance à dramatiser les séparations temporaires.",
+            "Apprenez à vous apaiser seul(e) quand l'autre est absent (permanence de l'objet).",
+            "Évitez les partenaires instables ou ambivalents qui renforcent le schéma."
         ],
-        "action_pastorale": "Pratiquez la 'Solitude Habitée'. Passez 15 min seul(e) en visualisant la présence de Dieu. Rappelez-vous : 'Je ressens de la peur, mais je ne suis pas en danger réel'.",
+        "action_pastorale": "Pratiquez la 'Solitude Habitée'. Passez 15 min seul(e) en visualisant la présence de Dieu à vos côtés. Rappelez-vous : 'Je ressens de la peur, mais je ne suis pas en danger réel car Il est là'.",
         "verset": "Hébreux 13:5"
     },
     "MA": {
         "titre": "Méfiance / Abus",
-        [cite_start]"slogan": "« Le monde est dangereux » [cite: 55]",
-        "clinique_expert": "Attente que l'autre va nuire. Projection d'intentionnalité malveillante. Schéma de survie traumatique post-abus.",
-        "theologie_expert": "Dieu est le Refuge (Mahseh). Passer de la suspicion (peur) au discernement (sagesse) sous Sa protection (Psaume 62:8).",
+        "slogan": "« Le monde est dangereux »",
+        "clinique_expert": "Attente que l'autre va nuire, manipuler ou trahir. Le patient projette une intentionnalité malveillante sur autrui. C'est un schéma de survie traumatique post-abus.",
+        "theologie_expert": "Le monde est déchu, mais Dieu est le Refuge (Mahseh). La guérison demande de renoncer à l'auto-protection cynique pour accepter la protection de Dieu, passant de la suspicion (peur) au discernement (sagesse).",
         "origines": [
-            [cite_start]"Abus physique, sexuel ou verbal dans l'enfance[cite: 62].",
-            [cite_start]"Famille humiliante, sadique ou punitive[cite: 63].",
-            [cite_start]"Trahi ou manipulé par une figure de confiance[cite: 67]."
+            "Abus physique, sexuel ou verbal dans l'enfance.",
+            "Famille humiliante, sadique ou punitive (plaisir à voir souffrir).",
+            "Avoir été trahi ou manipulé par une figure de confiance.",
+            "Avertissements constants des parents : 'Ne fais confiance à personne'."
         ],
         "symptomes": [
-            [cite_start]"Hypervigilance ('scanner' les menaces)[cite: 69].",
-            [cite_start]"Tests de loyauté envers les autres[cite: 117].",
-            [cite_start]"Attaquer avant d'être attaqué[cite: 77]."
+            "Hypervigilance ('scanner' les menaces en permanence).",
+            "Tests de loyauté envers les autres pour voir s'ils vont trahir.",
+            "Réticence à se confier par peur que ce soit utilisé contre soi.",
+            "Attaquer avant d'être attaqué."
         ],
         "mecanisme_titre": "Types d'Abus & Méfiance",
-        [cite_start]"mecanisme_texte": "Le schéma naît souvent d'abus physiques, sexuels ou verbaux [cite: 81-102]. La personne reste en mode 'survie', s'attendant à ce que toute gentillesse cache un piège.",
+        "mecanisme_texte": "Le schéma peut naître d'abus physiques, sexuels, verbaux (humiliation) ou de négligence. La personne reste en mode 'survie', s'attendant à ce que toute gentillesse cache un piège ou une manipulation.",
         "actions_therapeute": [
-            [cite_start]"Faites de petits pas pour faire confiance (test de réalité)[cite: 124].",
-            [cite_start]"Fixez des limites claires avec les personnes toxiques[cite: 121].",
-            [cite_start]"Développez de la compassion pour l'enfant blessé en vous[cite: 119]."
+            "Faites de petits pas pour faire confiance (test de réalité).",
+            "Fixez des limites claires avec les personnes toxiques sans vous isoler des bonnes.",
+            "Développez de la compassion pour l'enfant blessé en vous qui a dû se protéger."
         ],
-        "action_pastorale": "Remplacez la suspicion systématique par la prière : 'Seigneur, donne-moi ton discernement'. Déposez les armes de la défensive à la Croix.",
+        "action_pastorale": "Remplacez la suspicion systématique par la prière : 'Seigneur, donne-moi ton discernement'. Déposez les armes de la défensive au pied de la Croix.",
         "verset": "Psaume 62:8"
     },
     "SI": {
         "titre": "Isolement Social",
-        [cite_start]"slogan": "« Je n'ai pas ma place ici » [cite: 251]",
-        "clinique_expert": "Sentiment de différence fondamentale ('Alien'). Exclusion du groupe par manque d'appartenance ressentie.",
-        "theologie_expert": "En Christ, la 'différence' est une fonction dans le Corps, pas un motif d'exclusion. Réintégration dans la famille de Dieu (Éphésiens 2:19).",
+        "slogan": "« Je n'ai pas ma place ici »",
+        "clinique_expert": "Sentiment de différence fondamentale ('Alien'). Exclusion du groupe, non par rejet actif, mais par manque d'appartenance ressentie. Le patient se vit comme inadapté au lien social.",
+        "theologie_expert": "En Christ, la 'différence' n'est plus un motif d'exclusion mais une fonction dans le Corps (1 Corinthiens 12). La rédemption inclut la réintégration dans la famille de Dieu (Adoption).",
         "origines": [
-            [cite_start]"Humiliation ou rejet par les pairs (école, harcèlement)[cite: 258].",
-            [cite_start]"Famille différente de la communauté (religion, race, statut)[cite: 259].",
-            [cite_start]"Manque de compétences sociales encouragées[cite: 261]."
+            "Humiliation ou rejet par les pairs (école, harcèlement).",
+            "Famille très différente de la communauté (religion, race, statut, langue).",
+            "Manque de compétences sociales encouragées par les parents.",
+            "Sensation d'être 'bizarre' ou 'pas comme les autres' dès l'enfance."
         ],
         "symptomes": [
-            [cite_start]"Se sentir 'imposteur' ou 'inintéressant' en groupe[cite: 267].",
-            [cite_start]"Évitement systématique des activités sociales[cite: 265].",
-            [cite_start]"Caméléon social pour s'intégrer (perte de soi)[cite: 269]."
+            "Se sentir 'imposteur' ou 'inintéressant' en groupe.",
+            "Évitement systématique des activités sociales.",
+            "Caméléon social pour s'intégrer (perte de soi).",
+            "Anxiété de performance sociale (peur de dire une bêtise)."
         ],
         "mecanisme_titre": "Le Cycle de l'Anxiété Sociale",
-        [cite_start]"mecanisme_texte": "Anxiété -> Évitement -> Manque de pratique -> Renforcement de l'inadéquation -> Isolement accru [cite: 274-279].",
+        "mecanisme_texte": "Sentiment de différence -> Anxiété en situation sociale -> Évitement des groupes -> Manque de pratique sociale -> Renforcement de l'inadéquation -> Isolement accru.",
         "actions_therapeute": [
-            [cite_start]"Exposez-vous progressivement aux situations évitées[cite: 300].",
-            [cite_start]"Trouvez votre 'tribu' (intérêts communs)[cite: 304].",
-            [cite_start]"Entraînez-vous aux compétences sociales (contact visuel, questions)[cite: 302]."
+            "Exposez-vous progressivement aux situations évitées.",
+            "Trouvez votre 'tribu' (personnes partageant vos intérêts).",
+            "Entraînez-vous aux compétences sociales (contact visuel, poser des questions)."
         ],
         "action_pastorale": "Participez à la vie d'église non pour 'briller' mais pour 'être avec'. Vous êtes membre du Corps : l'œil ne peut dire à la main 'je n'ai pas besoin de toi'.",
         "verset": "Éphésiens 2:19"
     },
     "DS": {
         "titre": "Imperfection / Honte",
-        [cite_start]"slogan": "« Je ne vaux rien » [cite: 187]",
-        "clinique_expert": "Sentiment d'être intrinsèquement défectueux (Badness). Honte toxique : 'Je SUIS une erreur'.",
-        "theologie_expert": "Justification par la foi. Valeur fondée sur le statut en Christ, pas l'état intérieur (Sophonie 3:17).",
+        "slogan": "« Je ne vaux rien, je suis indigne »",
+        "clinique_expert": "Sentiment d'être intrinsèquement défectueux (Badness). La honte est toxique : ce n'est pas 'j'ai fait une erreur' (culpabilité), mais 'je SUIS une erreur'. Hypersensibilité à la critique.",
+        "theologie_expert": "C'est le cœur de la Justification. Christ a pris notre honte à la croix. Nous sommes déclarés justes non par notre amélioration, mais par l'imputation de sa justice.",
         "origines": [
-            [cite_start]"Famille critique, humiliante ou punitive[cite: 195].",
-            [cite_start]"Rejet ou manque d'amour par un parent[cite: 196].",
-            [cite_start]"Comparaison défavorable avec la fratrie[cite: 199]."
+            "Famille critique, humiliante ou punitive sur l'apparence ou le comportement.",
+            "Rejet ou manque d'amour par un parent ('tu es une déception').",
+            "Comparaison défavorable constante avec la fratrie.",
+            "Secrets de famille honteux."
         ],
         "symptomes": [
-            [cite_start]"Cacher sa vraie personnalité (masque)[cite: 221].",
-            [cite_start]"Hypersensibilité à la critique[cite: 207].",
-            [cite_start]"Attaquer les autres pour se revaloriser (contre-attaque)[cite: 219]."
+            "Cacher sa vraie personnalité (masque de normalité).",
+            "Hypersensibilité à la critique ou au blâme.",
+            "Attaquer les autres pour se revaloriser (contre-attaque).",
+            "Choisir des partenaires critiques qui confirment le sentiment de défaut."
         ],
         "mecanisme_titre": "Les 3 Copings de la Honte",
-        "mecanisme_texte": "1. Capitulation (autodestruction). 2. Évitement (se cacher). 3. [cite_start]Contre-attaque (narcissisme/critique) [cite: 214-219].",
+        "mecanisme_texte": "1. Capitulation (autodestruction, haine de soi).\n2. Évitement (se cacher, peur d'être 'démasqué').\n3. Contre-attaque (narcissisme, humilier les autres pour se remonter).",
         "actions_therapeute": [
-            [cite_start]"Cessez de vous comparer aux autres[cite: 241].",
-            [cite_start]"Dressez une liste de vos qualités réelles[cite: 242].",
-            [cite_start]"Célébrez intentionnellement vos succès[cite: 243]."
+            "Cessez de vous comparer aux autres.",
+            "Dressez une liste de vos qualités réelles et célébrez vos succès.",
+            "Acceptez les compliments sans les rejeter ou les minimiser."
         ],
-        "action_pastorale": "Quand la voix critique attaque, répondez à voix haute : 'Je suis imparfait, mais justifié, lavé et aimé en Christ'. Votre valeur a été fixée à la Croix.",
+        "action_pastorale": "Quand la voix critique attaque ('Tu es nul'), répondez-lui à voix haute avec la vérité biblique : 'Je suis imparfait, mais je suis justifié, lavé et aimé en Christ'.",
         "verset": "Sophonie 3:17"
     },
     "FA": {
         "titre": "Échec",
-        [cite_start]"slogan": "« Je suis un raté » [cite: 496]",
-        "clinique_expert": "Croyance en l'incompétence relative. Évitement des défis pour ne pas confirmer cette croyance.",
-        "theologie_expert": "Fin de l'idolâtrie de la réussite. Le succès selon Dieu est la fidélité (2 Corinthiens 12:9).",
+        "slogan": "« Je suis un raté, un imposteur »",
+        "clinique_expert": "Croyance en l'incompétence relative aux pairs. Le patient s'identifie à ses échecs. Il y a souvent un évitement des défis pour ne pas confirmer cette croyance (prophétie auto-réalisatrice).",
+        "theologie_expert": "L'idolâtrie de la réussite sociale est brisée. Le succès selon le Royaume est la fidélité, pas le résultat visible. La puissance de Dieu s'accomplit dans la faiblesse.",
         "origines": [
-            [cite_start]"Parents très critiques sur les résultats scolaires[cite: 502].",
-            [cite_start]"Comparaison défavorable avec les autres enfants[cite: 507].",
-            [cite_start]"Manque de limites ou de discipline dans l'enfance[cite: 508]."
+            "Parents très critiques sur les résultats scolaires ou sportifs.",
+            "Comparaison défavorable avec les autres enfants ('Regarde ton frère').",
+            "Manque de limites ou de discipline dans l'enfance (pas appris à persévérer).",
+            "Parent compétitif qui se sentait menacé par la réussite de l'enfant."
         ],
         "symptomes": [
-            [cite_start]"Procrastination par peur de l'échec[cite: 513].",
-            [cite_start]"Minimiser ses propres réussites ('c'est de la chance')[cite: 519].",
-            [cite_start]"Abandonner rapidement une tâche[cite: 516]."
+            "Procrastination par peur de l'échec.",
+            "Minimiser ses propres réussites ('c'est de la chance').",
+            "Abandonner rapidement une tâche dès la première difficulté.",
+            "Sentiment d'être bête ou incompétent malgré les preuves du contraire."
         ],
         "mecanisme_titre": "La Pensée 'Tout ou Rien'",
-        "mecanisme_texte": "Vision dichotomique : 'Si je ne suis pas parfait, je suis un échec total'. [cite_start]Cette norme irréaliste condamne à l'échec perçu [cite: 523-531].",
+        "mecanisme_texte": "Vision dichotomique : 'Si je ne suis pas le meilleur, je suis un échec total'. Cette norme irréaliste condamne à l'échec perçu, peu importe les efforts fournis.",
         "actions_therapeute": [
-            [cite_start]"Reconnaissez la courbe d'apprentissage normale[cite: 550].",
-            [cite_start]"Faites une liste de vos compétences réelles[cite: 552].",
-            [cite_start]"Lancez un hobby sans enjeu de performance[cite: 553]."
+            "Reconnaissez la courbe d'apprentissage normale (tout le monde tombe au début).",
+            "Faites une liste de vos compétences réelles.",
+            "Lancez un hobby sans aucun enjeu de performance."
         ],
         "action_pastorale": "Redéfinissez le succès : pour Dieu, c'est l'amour et l'obéissance. Entreprenez une action en acceptant qu'elle soit 'moyenne' aux yeux du monde, mais faite pour la gloire de Dieu.",
         "verset": "2 Corinthiens 12:9"
     },
     "DI": {
         "titre": "Dépendance / Incompétence",
-        [cite_start]"slogan": "« Je n'y arrive pas tout seul » [cite: 309]",
-        "clinique_expert": "Régression infantile. Croyance en l'incapacité à survivre seul. Recherche d'une figure parentale.",
-        "theologie_expert": "Dieu donne un esprit de force. Dépendance verticale (Dieu) pour autonomie horizontale (hommes) (Phil 4:13).",
+        "slogan": "« Je n'y arrive pas tout seul »",
+        "clinique_expert": "Croyance en l'incapacité à survivre seul. Le patient régresse dans une posture infantile, cherchant une 'figure parentale' pour assumer ses responsabilités. Manque de confiance en son jugement.",
+        "theologie_expert": "Dieu nous a donné un esprit de force et de sagesse (2 Tim 1:7). La dépendance saine est verticale (envers Dieu), ce qui permet une autonomie horizontale (envers les hommes).",
         "origines": [
-            [cite_start]"Parents surprotecteurs ('je le fais pour toi')[cite: 342].",
-            [cite_start]"Parents qui ne laissaient pas prendre de décisions[cite: 345].",
-            [cite_start]"Manque de conseils pratiques (négligence)[cite: 351]."
+            "Parents surprotecteurs qui faisaient tout à la place de l'enfant.",
+            "Parents qui ne laissaient pas prendre de décisions ('Tu es trop petit').",
+            "Manque de conseils pratiques (négligence) laissant l'enfant désemparé.",
+            "Critique sévère de chaque initiative d'autonomie."
         ],
         "symptomes": [
-            [cite_start]"Besoin constant d'être rassuré[cite: 328].",
-            [cite_start]"Peur paralysante de prendre une mauvaise décision[cite: 325].",
-            [cite_start]"Laisser les autres diriger sa vie[cite: 326]."
+            "Besoin constant d'être rassuré par les autres.",
+            "Peur paralysante de prendre une mauvaise décision.",
+            "Laisser les autres diriger sa vie (finances, choix).",
+            "Panique à l'idée de se débrouiller seul."
         ],
         "mecanisme_titre": "Surprotection vs Négligence",
-        [cite_start]"mecanisme_texte": "Soit l'enfant a été étouffé (pas d'autonomie), soit il a été livré à lui-même trop tôt sans guidance (échec appris) [cite: 341-353].",
+        "mecanisme_texte": "Le schéma vient de deux extrêmes : soit l'enfant a été étouffé (pas d'apprentissage de l'autonomie), soit il a été livré à lui-même trop tôt sans guidance (échec appris).",
         "actions_therapeute": [
-            [cite_start]"Listez les tâches où vous dépendez des autres[cite: 367].",
-            [cite_start]"Célébrez chaque acte d'autonomie, même petit[cite: 369].",
-            [cite_start]"Acceptez que les erreurs ne sont pas de l'incompétence[cite: 371]."
+            "Listez les tâches où vous dépendez des autres.",
+            "Prenez des petites décisions seul et assumez le résultat.",
+            "Célébrez chaque acte d'autonomie, même minime."
         ],
-        "action_pastorale": "Prenez une décision quotidienne seul(e) (repas, trajet) en vous confiant au Saint-Esprit qui habite en vous. Vous êtes équipé pour la vie.",
+        "action_pastorale": "Prenez une décision quotidienne seul(e) (repas, trajet) en vous confiant au Saint-Esprit qui habite en vous. Vous êtes équipé pour la vie, Dieu vous a donné la sagesse.",
         "verset": "Philippiens 4:13"
     },
     "VU": {
         "titre": "Vulnérabilité au Danger",
-        [cite_start]"slogan": "« Une catastrophe arrive » [cite: 377]",
-        "clinique_expert": "Anxiété catastrophique. Monde perçu comme dangereux. Hypervigilance (Psaume 91:4).",
-        "theologie_expert": "L'anxiété est une tentative d'assumer la Souveraineté de Dieu. Paix par la confiance en la Providence.",
+        "slogan": "« Une catastrophe est imminente »",
+        "clinique_expert": "Anxiété catastrophique. Le monde est perçu comme un lieu de dangers imminents (maladie, ruine, agression) qu'on ne peut ni prévoir ni contrôler. Hypervigilance constante.",
+        "theologie_expert": "Le problème racine est le contrôle. L'anxiété est une tentative d'assumer la Souveraineté de Dieu. La paix vient de la confiance en la Providence divine qui tient les temps.",
         "origines": [
-            [cite_start]"Parent anxieux ou phobique (apprentissage par observation)[cite: 386].",
-            [cite_start]"Traumatisme, maladie grave ou décès d'un proche dans l'enfance[cite: 389].",
-            [cite_start]"Surprotection parentale concernant les dangers[cite: 387]."
+            "Parent anxieux ou phobique (apprentissage de la peur par observation).",
+            "Traumatisme, maladie grave ou décès d'un proche dans l'enfance.",
+            "Environnement insécure (violence, pauvreté, instabilité).",
+            "Surprotection parentale avec des avertissements constants sur les dangers."
         ],
         "symptomes": [
-            [cite_start]"Scénarios catastrophes (santé, argent, agression)[cite: 382].",
-            [cite_start]"Vérifications compulsives (corps, portes)[cite: 394].",
-            [cite_start]"Rituels superstitieux pour se protéger[cite: 400]."
+            "Scénarios catastrophes (santé, argent, agression).",
+            "Vérifications compulsives (corps, portes, comptes).",
+            "Rituels superstitieux pour se protéger.",
+            "Évitement des situations nouvelles."
         ],
-        "mecanisme_titre": "Distorsions Cognitives",
-        "mecanisme_texte": "1. [cite_start]Catastrophisme (le pire va arriver)[cite: 413].\n2. [cite_start]Surestimation du danger / Sous-estimation des capacités[cite: 419].\n3. [cite_start]Filtrage (ne voir que les risques)[cite: 416].",
+        "mecanisme_titre": "Distorsions Cognitives de l'Anxiété",
+        "mecanisme_texte": "1. Catastrophisme (s'attendre au pire scénario).\n2. Surestimation du danger / Sous-estimation de ses capacités.\n3. Superstition (pensée magique).",
         "actions_therapeute": [
-            [cite_start]"Analysez la probabilité réelle des catastrophes[cite: 434].",
-            [cite_start]"Réduisez les comportements de vérification[cite: 435].",
-            [cite_start]"Exposition progressive aux situations craintes[cite: 437]."
+            "Analysez la probabilité réelle des catastrophes redoutées.",
+            "Réduisez les comportements de vérification (ex: ne vérifier la porte qu'une fois).",
+            "Exposition progressive aux situations craintes."
         ],
-        "action_pastorale": "Faites une 'Diète de l'info' anxiogène. Tenez un carnet de Gratitude notant 3 protections divines par jour. Ancrez-vous dans la sécurité du présent.",
+        "action_pastorale": "Faites une 'Diète de l'info' anxiogène. Tenez un carnet de Gratitude notant 3 protections divines par jour. Ancrez-vous dans la sécurité du présent car Dieu est là.",
         "verset": "Psaume 91:4"
     },
     "EU": {
         "titre": "Fusion / Personnalité Atrophiée",
-        [cite_start]"slogan": "« Je ne peux pas vivre sans toi » [cite: 441]",
-        "clinique_expert": "Symbiose émotionnelle. Manque d'individuation. Vie par procuration.",
-        "theologie_expert": "Dieu crée des individus distincts. 'Quitter' pour devenir une personne entière (Galates 1:10).",
+        "slogan": "« Je ne peux pas vivre sans toi »",
+        "clinique_expert": "Symbiose émotionnelle. Le patient n'a pas achevé son processus d'individuation. Il vit par procuration, absorbant les émotions de l'autre. Sentiment de vide sans la figure d'attachement.",
+        "theologie_expert": "Dieu a créé des individus distincts responsables de leurs propres âmes. La fusion est une forme d'idolâtrie relationnelle. Christ appelle à 'quitter' émotionnellement pour devenir une personne entière.",
         "origines": [
-            [cite_start]"Parent empêchant l'expression des besoins propres[cite: 450].",
-            [cite_start]"Culpabilisation quand l'enfant s'autonomise[cite: 453].",
-            [cite_start]"Parent vivant à travers l'enfant[cite: 483]."
+            "Parent envahissant ne respectant pas les frontières.",
+            "Culpabilisation quand l'enfant s'autonomise ou a des secrets.",
+            "Parent vivant à travers l'enfant (projection).",
+            "Manque d'encouragement à avoir sa propre identité."
         ],
         "symptomes": [
-            [cite_start]"Sentiment de vide quand on est seul[cite: 458].",
-            [cite_start]"Imiter les émotions/avis de l'autre[cite: 463].",
-            [cite_start]"Culpabilité intense à avoir une vie privée[cite: 461]."
+            "Sentiment de vide ou de désorientation quand on est seul.",
+            "Imiter les émotions, avis ou comportements de l'autre.",
+            "Culpabilité intense à avoir une vie privée.",
+            "Difficulté à savoir ce que l'on veut vraiment."
         ],
         "mecanisme_titre": "Identité Non-Développée",
-        "mecanisme_texte": "La personne ne sait pas qui elle est sans l'autre. Elle se définit par 'nous' plutôt que 'je'. [cite_start]Risque de relations toxiques[cite: 446].",
+        "mecanisme_texte": "La personne ne sait pas qui elle est sans l'autre. Elle se définit par 'nous' plutôt que 'je'. Cela mène souvent à des relations toxiques ou étouffantes.",
         "actions_therapeute": [
-            [cite_start]"Listez vos différences (goûts, avis) avec l'autre[cite: 487].",
-            [cite_start]"Passez du temps seul pour découvrir qui vous êtes[cite: 488].",
-            [cite_start]"Fixez des limites (ex: ne pas répondre immédiatement)[cite: 490]."
+            "Listez vos préférences personnelles (goûts, avis) distincts de l'autre.",
+            "Passez du temps seul pour découvrir qui vous êtes.",
+            "Fixez des limites (ex: ne pas répondre immédiatement aux messages)."
         ],
-        "action_pastorale": "Osez exprimer une opinion différente d'un proche sur un sujet mineur. C'est un acte spirituel d'affirmation de la créature unique que Dieu a faite en vous.",
+        "action_pastorale": "Cultivez votre jardin secret avec Dieu. Osez exprimer une opinion différente d'un proche sur un sujet mineur. C'est un acte spirituel d'affirmation de la créature unique que Dieu a faite en vous.",
         "verset": "Galates 1:10"
     },
     "SB": {
         "titre": "Assujettissement",
-        [cite_start]"slogan": "« Je dois faire ce que tu veux » [cite: 671]",
-        "clinique_expert": "Soumission forcée par peur. Répression des besoins et colère latente (agressivité passive).",
-        "theologie_expert": "Serviteur de Dieu affranchi des hommes. La vraie soumission est un choix d'amour (Galates 5:1).",
+        "slogan": "« Je dois faire ce que tu veux »",
+        "clinique_expert": "Soumission forcée pour éviter la colère ou l'abandon. Le patient réprime ses besoins et accumule une colère latente (agressivité passive). Il ne se sent pas le 'droit' d'avoir des limites.",
+        "theologie_expert": "Le chrétien est serviteur de Dieu, ce qui l'affranchit de l'esclavage des hommes. La vraie soumission est un choix libre d'amour (agapé), pas une contrainte de peur (phobos).",
         "origines": [
-            [cite_start]"Parent dominant, contrôlant ou punitif[cite: 681].",
-            [cite_start]"Menaces, colère ou retrait d'amour si désaccord[cite: 682].",
-            [cite_start]"Rôle de parentification (s'occuper du parent)[cite: 685]."
+            "Parent dominant, contrôlant ou punitif.",
+            "Menaces, colère ou retrait d'amour si désaccord.",
+            "Rôle de parentification (s'occuper des problèmes du parent).",
+            "Enfant n'ayant pas le droit d'avoir des émotions négatives."
         ],
         "symptomes": [
-            [cite_start]"Peur de dire non[cite: 717].",
-            [cite_start]"Sentiment d'être piégé[cite: 690].",
-            [cite_start]"Accumulation de colère (ressentiment)[cite: 696]."
+            "Peur de dire non.",
+            "Sentiment d'être piégé ou contrôlé.",
+            "Accumulation de colère (ressentiment) qui explose parfois.",
+            "Comportement passif-agressif."
         ],
-        "mecanisme_titre": "Le Rôle de la Colère",
-        "mecanisme_texte": "La soumission crée une dette émotionnelle. [cite_start]La colère refoulée finit par exploser ou devenir des symptômes psychosomatiques [cite: 699-709].",
+        "mecanisme_titre": "Le Rôle de la Colère Refoulée",
+        "mecanisme_texte": "La soumission crée une dette émotionnelle. La colère refoulée finit par exploser ou devenir des symptômes psychosomatiques. La colère est un signal que vos frontières sont violées.",
         "actions_therapeute": [
-            [cite_start]"Entraînez-vous à dire 'non'[cite: 719].",
-            [cite_start]"Identifiez vos droits et besoins légitimes[cite: 717].",
-            [cite_start]"Tolérer l'inconfort de ne pas plaire[cite: 720]."
+            "Entraînez-vous à dire 'non' sur des petites choses.",
+            "Identifiez vos droits et besoins légitimes.",
+            "Apprenez à tolérer l'inconfort de ne pas plaire à tout le monde."
         ],
         "action_pastorale": "Exercez-vous au 'Non bienveillant'. Refusez une demande cette semaine. Rappelez-vous que vous servez Dieu, pas l'humeur changeante des autres.",
         "verset": "Galates 5:1"
     },
     "SS": {
         "titre": "Abnégation",
-        [cite_start]"slogan": "« Je suis le sauveur » [cite: 726]",
-        "clinique_expert": "Syndrome du Sauveur. Focalisation sur autrui par culpabilité ou besoin de valorisation.",
-        "theologie_expert": "Nous ne sommes pas le Messie. L'intendance de soi est un devoir biblique (Matthieu 22:39).",
+        "slogan": "« Je suis le sauveur, je passe après »",
+        "clinique_expert": "Le syndrome du Sauveur. Focalisation excessive sur les besoins d'autrui au détriment des siens, motivée par la culpabilité ou le besoin de valorisation narcissique ('Je suis utile donc je suis').",
+        "theologie_expert": "Nous ne sommes pas le Messie. Vouloir sauver tout le monde est une limite que seul Dieu peut franchir. L'intendance de soi est un devoir biblique. Aimer son prochain implique de s'aimer soi-même.",
         "origines": [
-            [cite_start]"Responsabilité excessive d'un proche dans l'enfance[cite: 735].",
-            [cite_start]"Valorisée uniquement quand elle donnait ('sois gentil')[cite: 736].",
-            [cite_start]"Tempérament naturellement empathique[cite: 738]."
+            "Responsabilité excessive d'un proche dans l'enfance (parent malade/déprimé).",
+            "Valorisée uniquement quand elle donnait ('sois gentil', 'partage').",
+            "Tempérament naturellement empathique exploité.",
+            "Culpabilisation quand l'enfant s'occupait de lui."
         ],
         "symptomes": [
-            [cite_start]"Ne pas savoir recevoir de l'aide[cite: 745].",
-            [cite_start]"Épuisement (burnout) et rancœur cachée[cite: 746].",
-            [cite_start]"Attiré par les personnes à problèmes[cite: 748]."
+            "Ne pas savoir recevoir de l'aide ou des cadeaux.",
+            "Épuisement (burnout) et rancœur cachée ('après tout ce que j'ai fait').",
+            "Attiré par les personnes à problèmes (syndrome de l'infirmière).",
+            "Symptômes psychosomatiques (le corps dit stop)."
         ],
-        "mecanisme_titre": "Frontières (Boundaries)",
-        "mecanisme_texte": "Difficulté à fixer des limites. Le sacrifice est motivé par la culpabilité, pas par l'amour libre. [cite_start]C'est une forme de codépendance [cite: 761-764].",
+        "mecanisme_titre": "Problème de Frontières (Boundaries)",
+        "mecanisme_texte": "Difficulté à fixer des limites. Le sacrifice est souvent motivé par la culpabilité ou le besoin d'être 'bon', pas par l'amour libre. C'est une forme de codépendance.",
         "actions_therapeute": [
-            "Équilibrez le donner et le recevoir.",
+            "Équilibrez le donner et le recevoir dans vos relations.",
             "Demandez-vous : 'Je le fais par envie ou par culpabilité ?'.",
-            [cite_start]"Redéfinissez l'égoïsme[cite: 780]."
+            "Acceptez que les autres gèrent leurs propres problèmes."
         ],
         "action_pastorale": "Pratiquez le Sabbat : une demi-journée sans 'servir', juste pour être aimé de Dieu sans rien faire. C'est un acte d'humilité : le monde tourne sans vous.",
         "verset": "Matthieu 22:39"
     },
     "EI": {
         "titre": "Inhibition Émotionnelle",
-        [cite_start]"slogan": "« Je ne dois pas ressentir » [cite: 896]",
-        "clinique_expert": "Sur-contrôle. 'Faux-self' rationnel pour se protéger. Peur de perdre le contrôle.",
-        "theologie_expert": "Jésus a pleuré. Les émotions sont des signaux. La vérité implique l'authenticité (Psaume 62:9).",
+        "slogan": "« Je ne dois pas ressentir ou montrer »",
+        "clinique_expert": "Sur-contrôle des affects. La spontanéité est jugée dangereuse ou honteuse. Le patient présente un 'faux-self' rationnel et froid pour se protéger de la vulnérabilité.",
+        "theologie_expert": "Jésus a pleuré et ressenti l'angoisse. Les émotions sont des signaux créés par Dieu. La vérité (aletheia) implique l'authenticité émotionnelle devant Dieu.",
         "origines": [
-            [cite_start]"Émotions moquées, punies ou rejetées dans l'enfance[cite: 907].",
-            [cite_start]"Famille puritaine ou très rationnelle ('pleurer c'est faible')[cite: 909].",
-            [cite_start]"Peur de ressembler à un parent hystérique[cite: 911]."
+            "Émotions moquées, punies ou rejetées dans l'enfance ('arrête de pleurer').",
+            "Famille puritaine, stoïque ou très rationnelle.",
+            "Peur de ressembler à un parent hystérique/incontrôlable.",
+            "Traumatisme ayant conduit à 'éteindre' le ressenti."
         ],
         "symptomes": [
-            [cite_start]"Paraître froid, robotique ou distant[cite: 915].",
-            [cite_start]"Incapacité à pleurer ou montrer sa joie[cite: 916].",
-            [cite_start]"Accent excessif sur la logique[cite: 904]."
+            "Paraître froid, robotique ou distant.",
+            "Incapacité à pleurer ou montrer sa joie/colère.",
+            "Accent excessif sur la logique et la rationalité.",
+            "Malaise face aux émotions des autres."
         ],
         "mecanisme_titre": "La Roue des Émotions",
-        "mecanisme_texte": "Inhibition de la colère, de la joie ou de la vulnérabilité. [cite_start]Rationalisation pour éviter de ressentir la douleur [cite: 924-927].",
+        "mecanisme_texte": "Inhibition de la colère, de la joie ou de la vulnérabilité. Tendance à rationaliser ('Il faut être logique') pour éviter de ressentir la douleur. Risque d'explosion à retardement.",
         "actions_therapeute": [
-            [cite_start]"Utilisez la 'Roue des émotions' pour nommer ce que vous ressentez[cite: 924].",
-            [cite_start]"Tenez un journal émotionnel[cite: 940].",
-            [cite_start]"Recherchez des expériences émotionnelles (films, musique)[cite: 942]."
+            "Utilisez la 'Roue des émotions' pour nommer ce que vous ressentez.",
+            "Tenez un journal émotionnel.",
+            "Recherchez des expériences émotionnelles (films, musique, art)."
         ],
-        "action_pastorale": "Priez avec les Psaumes de lamentation. Osez dire 'Je suis triste' ou 'Je suis en colère' à Dieu. Les émotions ne sont pas des péchés, ce sont des informations.",
+        "action_pastorale": "Priez avec les Psaumes de lamentation. Osez dire 'Je suis triste' ou 'Je suis en colère' à Dieu. Les émotions ne sont pas des péchés, ce sont des informations sur votre cœur.",
         "verset": "Psaume 62:9"
     },
     "US": {
         "titre": "Exigences Élevées",
-        [cite_start]"slogan": "« Ce n'est jamais assez bien » [cite: 949]",
-        "clinique_expert": "Perfectionnisme pathologique. Tyrannie du 'Je dois'. Incapacité à ressentir la satisfaction.",
-        "theologie_expert": "Légalisme de la performance. L'Évangile est la fin de la performance pour le salut (Matthieu 11:28).",
+        "slogan": "« Ce n'est jamais assez bien »",
+        "clinique_expert": "Perfectionnisme pathologique. La valeur personnelle est conditionnelle à la performance. Tyrannie du 'Je dois'. Incapacité à ressentir la satisfaction ou le repos.",
+        "theologie_expert": "C'est une forme de légalisme : chercher à se justifier par les œuvres. L'Évangile est la fin de la performance pour le salut. La Grâce est l'acceptation de l'imperfection.",
         "origines": [
-            [cite_start]"Amour parental conditionnel à la réussite[cite: 960].",
-            [cite_start]"Parents eux-mêmes perfectionnistes (modèles)[cite: 961].",
-            [cite_start]"Critique ou honte en cas d'échec[cite: 963]."
+            "Amour parental conditionnel à la réussite ou à la performance.",
+            "Parents eux-mêmes perfectionnistes (modèles exigeants).",
+            "Critique ou honte en cas d'échec ou de médiocrité.",
+            "Besoin de compenser un sentiment d'infériorité."
         ],
         "symptomes": [
-            [cite_start]"Impossible de se détendre[cite: 965].",
-            [cite_start]"Hyper-critique envers soi et les autres[cite: 952].",
-            [cite_start]"Symptômes physiques de stress (insomnie, etc.)[cite: 970]."
+            "Impossible de se détendre ou de ne rien faire.",
+            "Hyper-critique envers soi et les autres.",
+            "Symptômes physiques de stress (insomnie, hypertension).",
+            "Sentiment que le temps presse toujours."
         ],
-        "mecanisme_titre": "Les 3 Types de Normes",
-        "mecanisme_texte": "1. Compulsivité (ordre). 2. Orientation réussite (travail). 3. Orientation statut (image). [cite_start]C'est une course sans fin [cite: 973-984].",
+        "mecanisme_titre": "Les 3 Types de Normes Impitoyables",
+        "mecanisme_texte": "1. Compulsivité (ordre/détail).\n2. Orientation réussite (travail acharné).\n3. Orientation statut (reconnaissance/image). C'est une course sans ligne d'arrivée.",
         "actions_therapeute": [
-            [cite_start]"Essayez de réduire vos exigences de 10%[cite: 999].",
-            [cite_start]"Listez les avantages et inconvénients de votre pression[cite: 997].",
-            [cite_start]"Forcez-vous à ralentir et faire des pauses[cite: 1002]."
+            "Essayez de réduire vos exigences de 10 à 20%.",
+            "Listez les avantages et inconvénients de votre pression.",
+            "Forcez-vous à ralentir et faire des pauses improductives."
         ],
-        "action_pastorale": "Le défi de l'imperfection : laissez volontairement une tâche inachevée (ex: lit mal fait) et observez que Dieu vous aime toujours autant. La grâce suffit.",
+        "action_pastorale": "Le défi de l'imperfection : laissez volontairement une tâche inachevée (ex: lit mal fait, faute de frappe) et observez que Dieu vous aime toujours autant. La grâce suffit.",
         "verset": "Matthieu 11:28"
     },
     "ET": {
         "titre": "Droits Personnels / Grandeur",
-        [cite_start]"slogan": "« Les règles ne s'appliquent pas à moi » [cite: 558]",
-        "clinique_expert": "Narcissisme et privilège. Manque d'empathie. Compensation d'une infériorité cachée.",
-        "theologie_expert": "Le Royaume inversé : le grand est serviteur. Reconnaître sa dépendance brise l'orgueil (Phil 2:3).",
+        "slogan": "« Les règles ne s'appliquent pas à moi »",
+        "clinique_expert": "Narcissisme et sentiment de privilège. Le patient refuse les limites communes, manque d'empathie et tolère mal la frustration. Souvent une compensation d'un manque.",
+        "theologie_expert": "L'orgueil précède la chute. Le Royaume de Dieu est un 'monde à l'envers' où le plus grand est le serviteur. Reconnaître sa dépendance totale à la grâce de Dieu brise l'orgueil.",
         "origines": [
-            [cite_start]"Enfant gâté, sans limites[cite: 565].",
-            [cite_start]"Parents n'ayant pas imposé de conséquences[cite: 566].",
-            [cite_start]"Compensation d'un sentiment de manque affectif[cite: 569]."
+            "Enfant gâté, sans limites ('Enfant Roi').",
+            "Parents n'ayant pas imposé de conséquences ou de discipline.",
+            "Compensation d'un sentiment de manque affectif ou d'exclusion.",
+            "Modèle parental narcissique."
         ],
         "symptomes": [
-            [cite_start]"Colère si on ne l'obéit pas immédiatement[cite: 585].",
-            [cite_start]"Manque d'empathie pour les besoins d'autrui[cite: 586].",
-            [cite_start]"Compétitivité excessive et manipulation[cite: 573]."
+            "Colère si on ne l'obéit pas immédiatement.",
+            "Manque d'empathie pour les besoins d'autrui.",
+            "Compétitivité excessive et manipulation.",
+            "Sentiment d'être 'spécial' et au-dessus des lois."
         ],
         "mecanisme_titre": "Les 3 Types de Droits",
-        "mecanisme_texte": "1. Narcissisme pur (je suis spécial). 2. Dépendance (les autres doivent me servir). 3. [cite_start]Impulsivité (je veux tout, tout de suite) [cite: 581-594].",
+        "mecanisme_texte": "1. Narcissisme pur (je suis spécial). \n2. Dépendance (les autres doivent me servir car je suis faible). \n3. Impulsivité (je veux tout, tout de suite).",
         "actions_therapeute": [
-            [cite_start]"Mettez-vous à la place des autres (empathie cognitive)[cite: 609].",
-            [cite_start]"Demandez un feedback honnête à un ami[cite: 608].",
-            [cite_start]"Travaillez la maîtrise des impulsions[cite: 610]."
+            "Mettez-vous à la place des autres (empathie cognitive).",
+            "Demandez un feedback honnête à un ami sur votre attitude.",
+            "Respectez les règles communes volontairement."
         ],
         "action_pastorale": "Pratiquez le service anonyme. Faites une bonne action (vaisselle, don) sans le dire et sans attendre de merci. Écoutez les autres sans ramener la conversation à vous.",
         "verset": "Philippiens 2:3"
     },
     "IS": {
         "titre": "Contrôle de soi insuffisant",
-        [cite_start]"slogan": "« C'est trop difficile, je m'en fiche » [cite: 617]",
-        "clinique_expert": "Impulsivité, principe de plaisir dominant. Difficulté à différer la gratification.",
-        "theologie_expert": "La maîtrise de soi est un fruit de l'Esprit. Dire non à la chair pour dire oui à la vie (Prov 25:28).",
+        "slogan": "« C'est trop difficile, je m'en fiche »",
+        "clinique_expert": "Impulsivité et intolérance à la frustration. Le principe de plaisir domine le principe de réalité. Difficulté à différer la gratification pour un but à long terme.",
+        "theologie_expert": "La maîtrise de soi est un fruit de l'Esprit. Ce n'est pas une simple volonté humaine, mais une discipline. C'est apprendre à dire 'non' à la chair pour dire 'oui' à la vie.",
         "origines": [
-            [cite_start]"Manque de discipline parentale[cite: 625].",
-            [cite_start]"Négligence ou stress chronique affectant le cerveau[cite: 624].",
-            [cite_start]"Enfant jamais forcé à tolérer la frustration[cite: 626]."
+            "Manque de discipline parentale ou de structure.",
+            "Négligence ou stress chronique affectant le cerveau.",
+            "Enfant jamais forcé à tolérer la frustration ou l'attente.",
+            "Modèle parental impulsif ou addictif."
         ],
         "symptomes": [
-            [cite_start]"Procrastination chronique[cite: 633].",
-            [cite_start]"Addictions ou évitement de l'inconfort[cite: 629].",
-            [cite_start]"Difficulté à tenir des engagements[cite: 630]."
+            "Procrastination chronique.",
+            "Addictions (écrans, nourriture, substances).",
+            "Évitement systématique de l'inconfort ou de l'ennui.",
+            "Difficulté à tenir des engagements."
         ],
         "mecanisme_titre": "La Stratégie SNAP",
-        "mecanisme_texte": "Stop, Notice (Remarquer), Align (Aligner avec valeurs), Process (Agir). [cite_start]Outil pour briser l'impulsion [cite: 638-653].",
+        "mecanisme_texte": "Stop, Notice (Remarquer), Align (Aligner avec valeurs), Process (Agir). Outil pour briser l'impulsion et insérer un temps de réflexion.",
         "actions_therapeute": [
             "Utilisez la méthode SNAP.",
-            [cite_start]"Fixez des micro-objectifs réalisables[cite: 664].",
-            [cite_start]"Enlevez les distractions de l'environnement[cite: 666]."
+            "Fixez des micro-objectifs réalisables.",
+            "Enlevez les distractions de l'environnement."
         ],
         "action_pastorale": "La méthode des 10 minutes : Quand vous voulez abandonner une tâche ou céder à une impulsion, tenez 10 min de plus en priant. C'est un muscle spirituel à exercer.",
         "verset": "Proverbes 25:28"
     },
     "AS": {
         "titre": "Recherche d'approbation",
-        [cite_start]"slogan": "« Ma valeur dépend de ton regard » [cite: 785]",
-        "clinique_expert": "Estime de soi externalisée. Caméléon social. Perte d'authenticité.",
-        "theologie_expert": "Idolâtrie de l'approbation humaine. Seule l'approbation du Père libère (1 Thess 2:4).",
+        "slogan": "« Ma valeur dépend de ton regard »",
+        "clinique_expert": "L'estime de soi est externalisée : elle dépend entièrement du regard de l'autre. Le patient perd son authenticité pour s'adapter aux attentes supposées ('Caméléon').",
+        "theologie_expert": "La crainte de l'homme est un piège. C'est de l'idolâtrie de l'approbation. Le chrétien vit 'Coram Deo' (devant la face de Dieu). Seule l'approbation du Père libère.",
         "origines": [
-            [cite_start]"Amour conditionné à la 'bonne conduite' sociale[cite: 792].",
-            [cite_start]"Parents soucieux des apparences et du statut[cite: 793].",
-            [cite_start]"Manque d'attention comblé par la performance[cite: 794]."
+            "Amour conditionné à la 'bonne conduite' ou à l'image sociale.",
+            "Parents soucieux des apparences, du statut ou de la réussite.",
+            "Manque d'attention comblé par la performance ou la gentillesse.",
+            "Poussé à s'intégrer plutôt qu'à être soi-même."
         ],
         "symptomes": [
-            [cite_start]"Changer de personnalité selon l'interlocuteur[cite: 800].",
-            [cite_start]"Importance excessive du statut/richesse[cite: 798].",
-            [cite_start]"Peur panique de déplaire[cite: 801]."
+            "Changer de personnalité selon l'interlocuteur.",
+            "Importance excessive du statut, de l'apparence ou de la richesse.",
+            "Peur panique de déplaire ou d'être critiqué.",
+            "Difficulté à prendre des décisions sans validation."
         ],
         "mecanisme_titre": "L'Adaptation Excessive",
-        "mecanisme_texte": "Le patient pense : 'Si je suis moi-même, on ne m'aimera pas'. [cite_start]Il développe un 'Faux-Self' pour être validé [cite: 807-811].",
+        "mecanisme_texte": "Le patient pense : 'Si je suis moi-même, on ne m'aimera pas'. Il développe un 'Faux-Self' pour être validé. Le besoin d'approbation est un puits sans fond.",
         "actions_therapeute": [
-            [cite_start]"Demandez-vous : 'Qu'est-ce que JE veux ?' avant d'agir[cite: 827].",
-            [cite_start]"Entraînez-vous à exprimer vos préférences[cite: 829].",
-            [cite_start]"Passez du temps seul pour vous retrouver[cite: 830]."
+            "Demandez-vous : 'Qu'est-ce que JE veux ?' avant d'agir.",
+            "Entraînez-vous à exprimer vos préférences (film, repas).",
+            "Passez du temps seul pour vous retrouver."
         ],
         "action_pastorale": "Faites le bien en secret (Matthieu 6). Acceptez un compliment par un simple 'Merci' sans vous en nourrir excessivement ni le rejeter. Votre audience est Dieu seul.",
         "verset": "1 Thessaloniciens 2:4"
     },
     "NP": {
         "titre": "Négativité / Pessimisme",
-        [cite_start]"slogan": "« Ça va mal finir » [cite: 837]",
-        "clinique_expert": "Biais cognitif négatif. Attente anxieuse que tout s'effondre. Positif minimisé.",
-        "theologie_expert": "La joie est un combat de la foi. Discipline de l'attention (Phil 4:8).",
+        "slogan": "« Ça va mal finir »",
+        "clinique_expert": "Biais cognitif de focalisation sur le négatif. Attente anxieuse que 'tout va s'effondrer'. Le positif est minimisé ou considéré comme suspect.",
+        "theologie_expert": "La résignation est un déni de l'Espérance. La 'joie' biblique est un combat de la foi, une discipline de l'attention pour reconnaître la grâce commune au milieu des épreuves.",
         "origines": [
-            [cite_start]"Parents pessimistes ou inquiets (modèle)[cite: 845].",
-            [cite_start]"Enfance marquée par des difficultés réelles/instabilité[cite: 847].",
-            [cite_start]"Découragement de l'autonomie ou de la joie[cite: 846]."
+            "Parents pessimistes, inquiets ou dépressifs (modèle).",
+            "Enfance marquée par des difficultés réelles, des pertes ou de l'instabilité.",
+            "Découragement de l'autonomie ou de la joie ('ne te réjouis pas trop vite')."
         ],
         "symptomes": [
-            [cite_start]"Filtre négatif (ne voit que le problème)[cite: 864].",
-            [cite_start]"Incapacité à se réjouir quand tout va bien[cite: 855].",
-            [cite_start]"Plaintes chroniques et indécision[cite: 842]."
+            "Filtre négatif (ne voit que le problème dans une solution).",
+            "Incapacité à se réjouir quand tout va bien (peur que ça s'arrête).",
+            "Plaintes chroniques et indécision par peur de l'erreur."
         ],
         "mecanisme_titre": "Les Distorsions Cognitives",
-        "mecanisme_texte": "1. Filtre négatif. 2. Généralisation excessive ('toujours'). 3. Catastrophisme. [cite_start]C'est une protection : 'Si je m'attends au pire, je ne serai pas déçu' [cite: 860-878].",
+        "mecanisme_texte": "1. Filtre négatif. \n2. Généralisation excessive ('ça m'arrive toujours'). \n3. Catastrophisme. C'est une protection : 'Si je m'attends au pire, je ne serai pas déçu'.",
         "actions_therapeute": [
-            [cite_start]"Examinez les preuves : est-ce vraiment toujours négatif ?[cite: 890].",
-            [cite_start]"Tenez un journal de gratitude (3 choses/jour)[cite: 889].",
-            [cite_start]"Considérez les exceptions à vos prévisions[cite: 892]."
+            "Examinez les preuves : est-ce vraiment toujours négatif ?.",
+            "Tenez un journal de gratitude (3 choses positives/jour).",
+            "Considérez les exceptions à vos prévisions sombres."
         ],
-        "action_pastorale": "Contre la rumination, trouvez un aspect positif pour chaque pensée négative. Louez Dieu pour une petite chose précise chaque matin.",
+        "action_pastorale": "Contre la rumination, trouvez un aspect positif pour chaque pensée négative. Louez Dieu pour une petite chose précise chaque matin pour rééduquer votre regard.",
         "verset": "Lamentations 3:21"
     },
     "PU": {
         "titre": "Punition",
-        [cite_start]"slogan": "« Les erreurs doivent être punies » [cite: 1007]",
-        "clinique_expert": "Intransigeance. Erreur = châtiment nécessaire. Difficulté à pardonner.",
-        "theologie_expert": "Incompréhension de la Croix. Christ a pris la punition (Rom 8:1).",
+        "slogan": "« Les erreurs doivent être punies »",
+        "clinique_expert": "Intransigeance et dureté. Croyance que l'erreur mérite châtiment. Difficulté à pardonner (à soi et aux autres). Tendance au jugement moralisateur.",
+        "theologie_expert": "C'est une incompréhension de la Croix. Christ a pris la punition. Il n'y a plus de condamnation. Maintenir une attitude punitive, c'est nier la suffisance du sacrifice de Jésus.",
         "origines": [
-            [cite_start]"Punitions sévères, critiques ou humiliations dans l'enfance[cite: 1014].",
-            [cite_start]"Parents impitoyables ou moralisateurs[cite: 1015].",
-            "Manque de droit à l'erreur."
+            "Punitions sévères, critiques ou humiliations dans l'enfance.",
+            "Parents impitoyables, moralisateurs ou violents.",
+            "Manque de droit à l'erreur ou au pardon."
         ],
         "symptomes": [
-            [cite_start]"Rancune tenace[cite: 1022].",
-            [cite_start]"Autopunition ou automutilation[cite: 1019].",
-            [cite_start]"Jugement sévère des autres et de soi[cite: 1017]."
+            "Rancune tenace.",
+            "Autopunition, automutilation ou sabotage.",
+            "Jugement sévère des autres ('il l'a bien cherché').",
+            "Difficulté à accepter les excuses."
         ],
         "mecanisme_titre": "Le Cycle de la Rancune",
-        "mecanisme_texte": "Standards rigides -> Erreur inévitable -> Colère/Jugement -> Punition. [cite_start]Croyance que la punition 'corrige' le comportement[cite: 1028].",
+        "mecanisme_texte": "Standards rigides -> Erreur inévitable -> Colère/Jugement -> Punition. Croyance erronée que la punition 'corrige' ou 'motive' le comportement.",
         "actions_therapeute": [
-            [cite_start]"Pratiquez l'auto-compassion[cite: 1052].",
-            [cite_start]"Considérez les circonstances atténuantes[cite: 1053].",
+            "Pratiquez l'auto-compassion.",
+            "Considérez les circonstances atténuantes chez les autres.",
             "Pardonnez-vous une erreur passée."
         ],
-        "action_pastorale": "Si Jésus a payé, ne cherchez pas à payer encore. Parlez-vous avec la douceur que le Christ utilise pour vous parler.",
+        "action_pastorale": "Si Jésus a payé, ne cherchez pas à payer encore. Parlez-vous avec la douceur que le Christ utilise pour vous parler. La miséricorde triomphe du jugement.",
         "verset": "Romains 8:1"
     }
 }
-# --- STRUCTURE DES DOMAINES DE YOUNG ---
-YOUNG_DOMAINS_INFO = {
-    "Domaine I : Séparation et Rejet": {
-        "codes": ["ED", "AB", "MA", "SI", "DS"],
-        "besoin": "Besoin de sécurité, de stabilité, d'affection et d'appartenance."
-    },
-    "Domaine II : Manque d'Autonomie et de Performance": {
-        "codes": ["DI", "VU", "EU", "FA"],
-        "besoin": "Besoin de compétence, d'identité propre et de confiance en soi."
-    },
-    "Domaine III : Limites Déficientes": {
-        "codes": ["ET", "IS"],
-        "besoin": "Besoin de limites réalistes, de respect des autres et d'autodiscipline."
-    },
-    "Domaine IV : Orientation vers les Autres": {
-        "codes": ["SB", "SS", "AS"],
-        "besoin": "Besoin de liberté d'expression et d'affirmation de ses besoins."
-    },
-    "Domaine V : Hypervigilance et Inhibition": {
-        "codes": ["NP", "EI", "US", "PU"],
-        "besoin": "Besoin de spontanéité, de plaisir et de lâcher-prise."
-    }
-}
-
 # --- LES 232 QUESTIONS VALIDÉES (OFFICIELLES) ---
 YSQ_QUESTIONS = {
     "ED : Carence affective": {
@@ -975,14 +982,18 @@ elif mode == "Espace Thérapeute":
                     fig_bar.update_layout(showlegend=False)
                     st.plotly_chart(fig_bar)
 
-               def generate_word_expert(patient_data, df_res, active_codes):
+              # ==============================================================================
+# 2. FONCTION DE GÉNÉRATION DU RAPPORT (ADAPTÉE AUX NOUVELLES DONNÉES)
+# ==============================================================================
+def generate_word_expert(patient_data, df_res, active_codes):
     doc = Document()
     doc.add_heading(f"Bilan Psychométrique : {patient_data['nom']}", 0)
     doc.add_paragraph(f"Date : {patient_data['created_at'][:10]}")
 
     # Section 1: Analyse Visuelle
     doc.add_heading('1. Synthèse des Résultats', level=1)
-    # (Code insertion graphique - voir partie précédente)
+    doc.add_paragraph("[Graphiques générés dans l'application]")
+    # Note: L'insertion des images se fait dans le code principal si les variables fig existent
     
     # Section 2: Tableau
     doc.add_heading('2. Tableau de Synthèse', level=1)
@@ -1009,13 +1020,13 @@ elif mode == "Espace Thérapeute":
                     p = doc.add_paragraph(); p.add_run(f"\n🔹 {inf['titre']}").bold = True
                     p.add_run(f" - {inf['slogan']}").italic = True
                     
-                    # 1. Analyse Expert
+                    # 1. Analyse Expert (V9)
                     doc.add_paragraph("Analyse Clinique (Expert) :").bold = True
                     doc.add_paragraph(inf['clinique_expert'])
                     doc.add_paragraph("Perspective Théologique :").bold = True
                     doc.add_paragraph(inf['theologie_expert'])
                     
-                    # 2. Origines & Symptômes (NOUVEAU - DU FICHIER)
+                    # 2. Origines & Symptômes (WORD DOC)
                     doc.add_paragraph("Origines Possibles :").bold = True
                     for o in inf['origines']: doc.add_paragraph(f"- {o}", style='List Bullet')
                     doc.add_paragraph("Signes au Quotidien :").bold = True
