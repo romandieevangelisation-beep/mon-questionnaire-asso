@@ -787,7 +787,87 @@ YSQ_QUESTIONS = {
         232: "Je ne crois pas à la deuxième chance."
     }
 }
+# ==============================================================================
+# BLOC TECHNIQUE MANQUANT (SÉCURITÉ & DONNÉES) - À COLLER AU MILIEU
+# ==============================================================================
 
+# --- FONCTIONS DE SÉCURITÉ ---
+def get_cipher():
+    """Récupère la clé secrète pour le chiffrement"""
+    return Fernet(st.secrets["ENCRYPTION_KEY"].encode())
+
+def encrypt_data(data_dict):
+    """Chiffre les données avant l'envoi"""
+    try:
+        cipher = get_cipher()
+        json_str = json.dumps(data_dict)
+        return cipher.encrypt(json_str.encode()).decode()
+    except Exception as e:
+        st.error(f"Erreur de chiffrement : {e}")
+        return json.dumps(data_dict) # Fallback non chiffré si erreur
+
+def decrypt_data(encrypted_str):
+    """Déchiffre les données brutes"""
+    try:
+        cipher = get_cipher()
+        return json.loads(cipher.decrypt(encrypted_str.encode()).decode())
+    except:
+        return None
+
+def decrypt_reponses(encrypted_json):
+    """Fonction intelligente : essaie de déchiffrer, sinon lit en clair (pour compatibilité)"""
+    try:
+        # Tente le déchiffrement sécurisé
+        cipher = get_cipher()
+        return json.loads(cipher.decrypt(encrypted_json.encode()).decode())
+    except:
+        # Si ça échoue (ex: ancienne donnée non chiffrée), on essaie de lire tel quel
+        try:
+            return json.loads(encrypted_json)
+        except:
+            return {} # Si tout échoue, renvoie vide
+
+# --- FONCTIONS BASE DE DONNÉES (SUPABASE) ---
+def save_patient_data(nom, email, reponses_dict):
+    if not supabase:
+        st.error("Erreur : Non connecté à la base de données.")
+        return False
+    
+    # On tente de chiffrer les données
+    final_data_str = encrypt_data(reponses_dict)
+    
+    data = {
+        "nom": nom,
+        "email": email,
+        "reponses_json": final_data_str,
+        "created_at": datetime.now().isoformat()
+    }
+    
+    try:
+        supabase.table("patients_ysq").insert(data).execute()
+        return True
+    except Exception as e:
+        st.error(f"Erreur d'enregistrement : {e}")
+        return False
+
+def load_all_patients():
+    if not supabase: return pd.DataFrame()
+    try:
+        # Récupère tout, trié par date décroissante
+        response = supabase.table("patients_ysq").select("*").order("created_at", desc=True).execute()
+        return pd.DataFrame(response.data)
+    except Exception as e:
+        st.error(f"Erreur de chargement : {e}")
+        return pd.DataFrame()
+
+def delete_patient(patient_id):
+    if not supabase: return False
+    try:
+        supabase.table("patients_ysq").delete().eq("id", patient_id).execute()
+        return True
+    except Exception as e:
+        st.error(f"Erreur de suppression : {e}")
+        return False
 # --- FONCTIONS SUPABASE ---
 def save_patient_data(nom, email, reponses_dict):
     if not supabase: return False
