@@ -704,10 +704,11 @@ elif mode == "Espace Thérapeute":
                     fig_radar.update_traces(fill='toself', line_color='blue')
                     st.plotly_chart(fig_radar)
                     
-                    # Barres (Couleurs)
-                    df_res["Color"] = df_res["Moyenne"].apply(lambda x: "red" if x > 3.5 else ("orange" if x >= 2.5 else "green"))
-                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], color="Color", color_discrete_map={"red": "#d32f2f", "orange": "#f57c00", "green": "#388e3c"})
-                    fig_bar.update_layout(showlegend=False)
+                  # Barres (Gradient couleur V11)
+                    fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], 
+                                     color="Moyenne", 
+                                     color_continuous_scale="RdYlGn_r", 
+                                     title="Intensité des Schémas")
                     st.plotly_chart(fig_bar)
 
                 def gen_expert():
