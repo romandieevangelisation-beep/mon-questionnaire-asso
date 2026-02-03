@@ -1054,7 +1054,7 @@ def generate_word_expert(patient_data, df_res, active_codes):
     st.download_button("📥 Télécharger le Rapport Expert (Complet)", generate_word_expert(), f"Bilan_Expert_{patient_data['nom']}.docx")
 
     elif pwd_input:
-        st.error("Mot de passe incorrect.")
+    st.error("Mot de passe incorrect.")
 
 # --- FOOTER ---
 st.markdown("---")
