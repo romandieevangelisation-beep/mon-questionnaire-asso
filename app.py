@@ -627,6 +627,9 @@ if mode == "Espace Patient":
                 if save_patient_data(nom, email, reponses):
                     st.success("✅ Vos réponses ont été transmises."); st.balloons()
 
+# ==============================================================================
+# 2. ESPACE THÉRAPEUTE (ADMIN) - VERSION AVEC MÉMOIRE DE SESSION
+# ==============================================================================
 elif mode == "Espace Thérapeute":
     st.sidebar.divider()
     pwd_input = st.sidebar.text_input("Mot de passe Admin", type="password")
@@ -645,19 +648,38 @@ elif mode == "Espace Thérapeute":
             c_select, c_action = st.columns([3, 1])
             with c_select:
                 patient_options = {f"{row['nom']} ({row['created_at'][:16]})": row['id'] for index, row in df.iterrows()}
-                sel_label = st.selectbox("Sélectionner un dossier :", list(patient_options.keys()))
-                sel_id = patient_options[sel_label]
+                selected_label = st.selectbox("Sélectionner un dossier :", list(patient_options.keys()))
+                selected_id = patient_options[selected_label]
+            
             with c_action:
                 st.write(""); st.write("")
                 if st.button("🗑️ Supprimer", type="primary"):
-                    if delete_patient(sel_id): st.success("Supprimé."); st.rerun()
+                    if delete_patient(selected_id):
+                        st.success("Dossier supprimé.")
+                        st.rerun()
             
             st.markdown("---")
-            col_raw, col_an = st.columns(2)
-            pat_data = df[df["id"] == sel_id].iloc[0]
+            
+            # --- GESTION DE LA MÉMOIRE (SESSION STATE) ---
+            # Si on change de patient, on réinitialise l'analyse
+            if 'last_selected_id' not in st.session_state:
+                st.session_state.last_selected_id = selected_id
+            
+            if st.session_state.last_selected_id != selected_id:
+                st.session_state.analyse_active = False # On ferme l'analyse précédente
+                st.session_state.last_selected_id = selected_id
+
+            # Initialisation de la variable de mémoire
+            if 'analyse_active' not in st.session_state:
+                st.session_state.analyse_active = False
+
+            # Récupération des données
+            pat_data = df[df["id"] == selected_id].iloc[0]
             reponses_dict = decrypt_reponses(pat_data["reponses_json"])
 
             # 1. FICHIER BRUT
+            col_raw, col_btn = st.columns(2)
+            
             def gen_raw():
                 doc = Document()
                 doc.add_heading(f"Réponses Brutes : {pat_data['nom']}", 0)
@@ -669,14 +691,20 @@ elif mode == "Espace Thérapeute":
                         if s != "-" and str(s).isdigit() and int(s) >= 5: p.runs[-1].font.color.rgb = RGBColor(255, 0, 0)
                 out = BytesIO(); doc.save(out); return out.getvalue()
             
-            with col_raw: st.download_button("📄 Télécharger Réponses Brutes", gen_raw(), f"Reponses_{pat_data['nom']}.docx")
+            with col_raw:
+                st.download_button("📄 Télécharger Réponses Brutes", gen_raw(), f"Reponses_{pat_data['nom']}.docx")
 
-           # 2. ANALYSE EXPERTE & SÉLECTION
-            if st.button("📊 Lancer l'Analyse Clinique"):
+            # 2. BOUTON D'ANALYSE (Active la mémoire)
+            with col_btn:
+                if st.button("📊 Lancer l'Analyse Clinique"):
+                    st.session_state.analyse_active = True # On active la mémoire !
+
+            # 3. AFFICHAGE PERSISTANT (Si la mémoire est active)
+            if st.session_state.analyse_active:
+                st.divider()
                 
-                # --- A. CALCUL DES SCORES ---
+                # --- CALCULS ---
                 resultats = []
-                # Liste pour la pré-sélection automatique (ceux > 2.5 ou avec des 5/6)
                 pre_selection = []
                 
                 for domaine, q_dict in YSQ_QUESTIONS.items():
@@ -687,21 +715,18 @@ elif mode == "Espace Thérapeute":
                     moy = sum(scores) / len(scores)
                     sev = len([x for x in scores if x >= 5])
                     pct = (sev / len(scores)) * 100
-                    
-                    # Logique des étoiles
                     etoile = " ⭐" if sev > 0 else ""
                     
-                    # Logique des niveaux
+                    # Logique de pré-sélection pour le rapport
                     if moy > 3.5:
                         niv = "🔴 IMPORTANT"
-                        pre_selection.append(code) # On pré-sélectionne
+                        pre_selection.append(code)
                     elif moy >= 2.5:
                         niv = "🟡 Moyen"
-                        pre_selection.append(code) # On pré-sélectionne aussi les moyens
+                        pre_selection.append(code)
                     else:
                         niv = "🟢 Faible"
-                        # On ajoute aussi si faible mais avec au moins une réponse sévère (5 ou 6)
-                        if sev > 0: pre_selection.append(code)
+                        if sev > 0: pre_selection.append(code) # Ajoute si faible mais avec pics
 
                     resultats.append({
                         "Code": code,
@@ -713,39 +738,37 @@ elif mode == "Espace Thérapeute":
                 
                 df_res = pd.DataFrame(resultats)
                 
-                # --- B. AFFICHAGE TABLEAU & GRAPHIQUES ---
+                # --- VISUALISATION ---
                 c1, c2 = st.columns(2)
-                with c1:
-                    st.markdown("### 📋 Synthèse des Scores")
-                    st.table(df_res)
+                with c1: st.table(df_res)
                 with c2:
-                    st.markdown("### 📈 Visualisation")
                     # Radar
                     fig_radar = px.line_polar(df_res, r='Moyenne', theta='Code', line_close=True, range_r=[0,6])
                     fig_radar.update_traces(fill='toself', line_color='blue')
                     st.plotly_chart(fig_radar)
                     
-                    # Barres (Dégradé)
+                    # Barres Dégradées
                     fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], 
                                      color="Moyenne", 
                                      color_continuous_scale="RdYlGn_r", 
                                      title="Intensité des Schémas")
                     st.plotly_chart(fig_bar)
 
-                # --- C. SÉLECTION MANUELLE POUR LE RAPPORT (NOUVEAU !) ---
-                st.divider()
-                st.markdown("### 📝 Personnalisation du Rapport")
-                st.info("Le logiciel a pré-sélectionné les schémas Moyens et Importants. Vous pouvez ajuster cette liste avant de générer le Word.")
+                # --- SÉLECTION DES SCHÉMAS (PERSISTANTE MAINTENANT) ---
+                st.markdown("---")
+                st.subheader("📝 Personnalisation du Rapport")
                 
-                # Le widget multiselect
-                codes_disponibles = df_res["Code"].tolist()
+                # La liste des codes disponibles
+                codes_possibles = df_res["Code"].tolist()
+                
+                # Le Multiselect (ne disparaîtra plus !)
                 selection_finale = st.multiselect(
-                    "Sélectionnez les schémas à inclure dans le dossier patient :",
-                    options=codes_disponibles,
-                    default=pre_selection # Pré-rempli avec notre logique intelligente
+                    "Ajoutez ou retirez des schémas pour le rapport Word :",
+                    options=codes_possibles,
+                    default=pre_selection
                 )
 
-                # Fonction de génération (utilise maintenant 'selection_finale')
+                # --- GÉNÉRATION WORD ---
                 def gen_expert():
                     doc = Document()
                     doc.add_heading(f"Bilan Psychométrique : {pat_data['nom']}", 0)
@@ -770,11 +793,12 @@ elif mode == "Espace Thérapeute":
 
                     doc.add_heading('3. Analyse Intégrale', 1)
                     
-                    # On utilise la sélection manuelle ici !
+                    # Utilisation de la sélection manuelle
                     if selection_finale:
                         for d_name, d_info in YOUNG_DOMAINS_INFO.items():
-                            # On ne garde que ceux qui sont dans la sélection finale
+                            # Filtre basé sur la sélection de l'utilisateur
                             match = [c for c in d_info["codes"] if c in selection_finale]
+                            
                             if match:
                                 doc.add_heading(d_name, 2)
                                 doc.add_paragraph(d_info["besoin"]).italic = True
@@ -816,6 +840,8 @@ elif mode == "Espace Thérapeute":
                     out = BytesIO(); doc.save(out); return out.getvalue()
 
                 st.download_button("📥 Télécharger Rapport Expert", gen_expert(), f"Bilan_{pat_data['nom']}.docx")
+    
+    elif pwd_input: st.error("Mot de passe incorrect.")
 # --- FOOTER ---
 st.markdown("---")
 with st.expander("🔒 Confidentialité et Protection des Données"):
