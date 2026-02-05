@@ -726,11 +726,10 @@ elif mode == "Espace Thérapeute":
                     st.plotly_chart(fig_radar)
                     
                     # Barres (Dégradé)
-                    df_res["Color"] = df_res["Moyenne"].apply(lambda x: "red" if x > 3.5 else ("orange" if x >= 2.5 else "green"))
                     fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], 
-                                     color="Color", 
-                                     color_discrete_map={"red": "#d32f2f", "orange": "#f57c00", "green": "#388e3c"})
-                    fig_bar.update_layout(showlegend=False)
+                                     color="Moyenne", 
+                                     color_continuous_scale="RdYlGn_r", 
+                                     title="Intensité des Schémas")
                     st.plotly_chart(fig_bar)
 
                 # --- C. SÉLECTION MANUELLE POUR LE RAPPORT (NOUVEAU !) ---
