@@ -671,20 +671,38 @@ elif mode == "Espace Thérapeute":
             
             with col_raw: st.download_button("📄 Télécharger Réponses Brutes", gen_raw(), f"Reponses_{pat_data['nom']}.docx")
 
-            # 2. ANALYSE EXPERTE
+           # 2. ANALYSE EXPERTE & SÉLECTION
             if st.button("📊 Lancer l'Analyse Clinique"):
+                
+                # --- A. CALCUL DES SCORES ---
                 resultats = []
-                active_codes = []
+                # Liste pour la pré-sélection automatique (ceux > 2.5 ou avec des 5/6)
+                pre_selection = []
+                
                 for domaine, q_dict in YSQ_QUESTIONS.items():
-                    code = domaine.split(" : ")[0]; nom_sch = domaine.split(" : ")[1]
+                    code = domaine.split(" : ")[0]
+                    nom_sch = domaine.split(" : ")[1]
                     scores = [int(reponses_dict.get(f"Q{k}", 1) or 1) for k in q_dict.keys()]
-                    moy = sum(scores)/len(scores)
+                    
+                    moy = sum(scores) / len(scores)
                     sev = len([x for x in scores if x >= 5])
                     pct = (sev / len(scores)) * 100
-                    etoile = " ⭐" if sev > 0 else ""
-                    if sev > 0: active_codes.append(code)
-                    niv = "🔴 IMPORTANT" if moy > 3.5 else ("🟡 Moyen" if moy >= 2.5 else "🟢 Faible")
                     
+                    # Logique des étoiles
+                    etoile = " ⭐" if sev > 0 else ""
+                    
+                    # Logique des niveaux
+                    if moy > 3.5:
+                        niv = "🔴 IMPORTANT"
+                        pre_selection.append(code) # On pré-sélectionne
+                    elif moy >= 2.5:
+                        niv = "🟡 Moyen"
+                        pre_selection.append(code) # On pré-sélectionne aussi les moyens
+                    else:
+                        niv = "🟢 Faible"
+                        # On ajoute aussi si faible mais avec au moins une réponse sévère (5 ou 6)
+                        if sev > 0: pre_selection.append(code)
+
                     resultats.append({
                         "Code": code,
                         "Schéma": f"{nom_sch}{etoile}",
@@ -695,22 +713,40 @@ elif mode == "Espace Thérapeute":
                 
                 df_res = pd.DataFrame(resultats)
                 
-                # --- AFFICHAGE ÉCRAN (RETOUR DU TABLEAU) ---
+                # --- B. AFFICHAGE TABLEAU & GRAPHIQUES ---
                 c1, c2 = st.columns(2)
-                with c1: st.table(df_res) # Tableau restauré
+                with c1:
+                    st.markdown("### 📋 Synthèse des Scores")
+                    st.table(df_res)
                 with c2:
-                    # Radar (Restauré)
+                    st.markdown("### 📈 Visualisation")
+                    # Radar
                     fig_radar = px.line_polar(df_res, r='Moyenne', theta='Code', line_close=True, range_r=[0,6])
                     fig_radar.update_traces(fill='toself', line_color='blue')
                     st.plotly_chart(fig_radar)
                     
-                  # Barres (Gradient couleur V11)
+                    # Barres (Dégradé)
+                    df_res["Color"] = df_res["Moyenne"].apply(lambda x: "red" if x > 3.5 else ("orange" if x >= 2.5 else "green"))
                     fig_bar = px.bar(df_res, x='Code', y='Moyenne', range_y=[0,6], 
-                                     color="Moyenne", 
-                                     color_continuous_scale="RdYlGn_r", 
-                                     title="Intensité des Schémas")
+                                     color="Color", 
+                                     color_discrete_map={"red": "#d32f2f", "orange": "#f57c00", "green": "#388e3c"})
+                    fig_bar.update_layout(showlegend=False)
                     st.plotly_chart(fig_bar)
 
+                # --- C. SÉLECTION MANUELLE POUR LE RAPPORT (NOUVEAU !) ---
+                st.divider()
+                st.markdown("### 📝 Personnalisation du Rapport")
+                st.info("Le logiciel a pré-sélectionné les schémas Moyens et Importants. Vous pouvez ajuster cette liste avant de générer le Word.")
+                
+                # Le widget multiselect
+                codes_disponibles = df_res["Code"].tolist()
+                selection_finale = st.multiselect(
+                    "Sélectionnez les schémas à inclure dans le dossier patient :",
+                    options=codes_disponibles,
+                    default=pre_selection # Pré-rempli avec notre logique intelligente
+                )
+
+                # Fonction de génération (utilise maintenant 'selection_finale')
                 def gen_expert():
                     doc = Document()
                     doc.add_heading(f"Bilan Psychométrique : {pat_data['nom']}", 0)
@@ -734,9 +770,12 @@ elif mode == "Espace Thérapeute":
                         else: run.font.color.rgb = RGBColor(0, 128, 0)
 
                     doc.add_heading('3. Analyse Intégrale', 1)
-                    if active_codes:
+                    
+                    # On utilise la sélection manuelle ici !
+                    if selection_finale:
                         for d_name, d_info in YOUNG_DOMAINS_INFO.items():
-                            match = [c for c in d_info["codes"] if c in active_codes]
+                            # On ne garde que ceux qui sont dans la sélection finale
+                            match = [c for c in d_info["codes"] if c in selection_finale]
                             if match:
                                 doc.add_heading(d_name, 2)
                                 doc.add_paragraph(d_info["besoin"]).italic = True
@@ -773,12 +812,11 @@ elif mode == "Espace Thérapeute":
                                     p_v = doc.add_paragraph(); p_v.add_run("📖 Verset d'ancrage : ").bold = True
                                     p_v.add_run(inf['verset']).italic = True
                                     doc.add_paragraph("-" * 30)
-                    else: doc.add_paragraph("Aucun schéma significatif.")
+                    else: doc.add_paragraph("Aucun schéma sélectionné.")
                     
                     out = BytesIO(); doc.save(out); return out.getvalue()
 
                 st.download_button("📥 Télécharger Rapport Expert", gen_expert(), f"Bilan_{pat_data['nom']}.docx")
-    else: st.error("Mot de passe incorrect.")
 # --- FOOTER ---
 st.markdown("---")
 with st.expander("🔒 Confidentialité et Protection des Données"):
