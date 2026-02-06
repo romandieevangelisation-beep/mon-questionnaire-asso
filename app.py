@@ -72,7 +72,7 @@ DATA_SCHEMAS = {
         "mecanisme_titre": "Les 3 Formes de Privation",
         "mecanisme_texte": "1. Privation d'Attention (manque de chaleur).\n2. Privation d'Empathie (manque d'écoute).\n3. Privation de Protection (manque de guidance).",
         "actions_therapeute": ["Soyez à l'écoute de vos besoins d'attention et de protection.", "Exprimez vos besoins de manière assertive ('J'ai besoin de...').", "Évitez les partenaires froids qui recréent la privation familière."],
-        "action_pastorale": "Tenez un journal de vos besoins devant Dieu. Osez demander une petite chose simple à un proche sans vous excuser, comme un acte de foi que vous méritez l'amour.",
+        "action_pastorale": "Tenez un journal de vos besoins devant Dieu. Osez demander une petite chose simple à un proche sans vous excuser, comme un acte de foi que Dieu vous aime et que vous n'avez pas besoin de le mériter.",
         "verset": "Psaume 27:10 - « Car mon père et ma mère m'abandonnent, mais l'Éternel me recueillera. »"
     },
     "AB": {
@@ -109,7 +109,7 @@ DATA_SCHEMAS = {
         "origines": ["Humiliation ou rejet par les pairs (école).", "Famille différente de la communauté.", "Manque de compétences sociales encouragées."],
         "symptomes": ["Se sentir 'imposteur' ou 'inintéressant' en groupe.", "Évitement systématique des activités sociales.", "Caméléon social pour s'intégrer (perte de soi)."],
         "mecanisme_titre": "Le Cycle de l'Anxiété Sociale",
-        "mecanisme_texte": "Anxiété -> Évitement -> Manque de pratique -> Renforcement de l'inadéquation -> Isolement accru.",
+        "mecanisme_texte": "Anxiété -> Évitement -> Conséquences -> Renforcement de l'inadéquation -> Isolement accru.",
         "actions_therapeute": ["Exposez-vous progressivement aux situations évitées.", "Trouvez votre 'tribu' (intérêts communs).", "Entraînez-vous aux compétences sociales."],
         "action_pastorale": "Participez à la vie d'église non pour 'briller' mais pour 'être avec'. Vous êtes membre du Corps : l'œil ne peut dire à la main 'je n'ai pas besoin de toi'.",
         "verset": "Éphésiens 2:19 - « Vous n'êtes plus des étrangers, ni des gens du dehors; mais vous êtes concitoyens des saints. »"
@@ -137,7 +137,7 @@ DATA_SCHEMAS = {
         "mecanisme_titre": "La Pensée 'Tout ou Rien'",
         "mecanisme_texte": "Vision dichotomique : 'Si je ne suis pas le meilleur, je suis un échec total'. Cette norme irréaliste condamne à l'échec perçu.",
         "actions_therapeute": ["Reconnaissez la courbe d'apprentissage normale.", "Faites une liste de vos compétences réelles.", "Lancez un hobby sans enjeu de performance."],
-        "action_pastorale": "Redéfinissez le succès : pour Dieu, c'est l'amour et l'obéissance. Entreprenez une action en acceptant qu'elle soit 'moyenne' aux yeux du monde, mais faite pour la gloire de Dieu.",
+        "action_pastorale": "Redéfinissez le succès : pour Dieu, c'est vivre pour sa gloire dans l'amour et l'obéissance. Entreprenez une action en acceptant qu'elle soit 'moyenne' aux yeux du monde, mais faite pour la gloire de Dieu.",
         "verset": "2 Corinthiens 12:9 - « Ma grâce te suffit, car ma puissance s'accomplit dans la faiblesse. »"
     },
     "DI": {
@@ -150,7 +150,7 @@ DATA_SCHEMAS = {
         "mecanisme_titre": "Surprotection vs Négligence",
         "mecanisme_texte": "Soit l'enfant a été étouffé (pas d'autonomie), soit il a été livré à lui-même trop tôt sans guidance (échec appris).",
         "actions_therapeute": ["Listez les tâches où vous dépendez des autres.", "Prenez des petites décisions seul et assumez le résultat.", "Célébrez chaque acte d'autonomie."],
-        "action_pastorale": "Prenez une décision quotidienne seul(e) (repas, trajet) en vous confiant au Saint-Esprit qui habite en vous. Vous êtes équipé pour la vie.",
+        "action_pastorale": "Prenez une décision quotidienne seul(e) (repas, trajet) en vous confiant au Saint-Esprit qui habite en vous. Vous êtes équipé pour la vie. Dieu vous donne la force et les compétences dont vous avez besoin.",
         "verset": "Philippiens 4:13 - « Je puis tout par celui qui me fortifie. »"
     },
     "VU": {
@@ -163,7 +163,7 @@ DATA_SCHEMAS = {
         "mecanisme_titre": "Distorsions Cognitives",
         "mecanisme_texte": "1. Catastrophisme (le pire va arriver).\n2. Surestimation du danger / Sous-estimation de ses capacités.\n3. Superstition (pensée magique).",
         "actions_therapeute": ["Analysez la probabilité réelle des catastrophes.", "Réduisez les comportements de vérification.", "Exposition progressive aux situations craintes."],
-        "action_pastorale": "Faites une 'Diète de l'info' anxiogène. Tenez un carnet de Gratitude notant 3 protections divines par jour. Ancrez-vous dans la sécurité du présent.",
+        "action_pastorale": "Faites une 'Diète de l'info' anxiogène. Tenez un carnet de Gratitude notant 3 événements par jour où vous avez été gardé par Dieu. Ancrez-vous dans la sécurité que Dieu vous donne dans le présent.",
         "verset": "Psaume 91:4 - « Il te couvrira de ses plumes, et tu trouveras un refuge sous ses ailes. »"
     },
     "EU": {
@@ -176,7 +176,7 @@ DATA_SCHEMAS = {
         "mecanisme_titre": "Identité Non-Développée",
         "mecanisme_texte": "La personne ne sait pas qui elle est sans l'autre. Elle se définit par 'nous' plutôt que 'je'. Risque de relations toxiques.",
         "actions_therapeute": ["Listez vos préférences personnelles (goûts, avis) distincts de l'autre.", "Passez du temps seul pour découvrir qui vous êtes.", "Fixez des limites."],
-        "action_pastorale": "Osez exprimer une opinion différente d'un proche sur un sujet mineur. C'est un acte spirituel d'affirmation de la créature unique que Dieu a faite en vous.",
+        "action_pastorale": "Osez exprimer une opinion différente d'un proche sur un sujet mineur. C'est un acte spirituel d'affirmation de la créature unique que Dieu a faite en vous créant.",
         "verset": "Galates 1:10 - « Est-ce la faveur des hommes que je désire, ou celle de Dieu ? »"
     },
     "SB": {
@@ -202,7 +202,7 @@ DATA_SCHEMAS = {
         "mecanisme_titre": "Frontières (Boundaries)",
         "mecanisme_texte": "Difficulté à fixer des limites. Le sacrifice est motivé par la culpabilité, pas par l'amour libre. C'est une forme de codépendance.",
         "actions_therapeute": ["Équilibrez le donner et le recevoir.", "Demandez-vous : 'Je le fais par envie ou par culpabilité ?'.", "Acceptez que les autres gèrent leurs problèmes."],
-        "action_pastorale": "Pratiquez le Sabbat : une demi-journée sans 'servir', juste pour être aimé de Dieu sans rien faire. C'est un acte d'humilité : le monde tourne sans vous.",
+        "action_pastorale": "Pratiquez le Sabbat : une demi-journée ou une journée sans 'servir', juste pour être aimé de Dieu sans rien faire. C'est un acte d'humilité : le monde tourne sans vous.",
         "verset": "Matthieu 22:39 - « Tu aimeras ton prochain comme toi-même. »"
     },
     "EI": {
@@ -252,7 +252,7 @@ DATA_SCHEMAS = {
         "origines": ["Manque de discipline parentale.", "Négligence ou stress chronique.", "Enfant jamais forcé à tolérer la frustration."],
         "symptomes": ["Procrastination chronique.", "Addictions.", "Évitement systématique de l'inconfort."],
         "mecanisme_titre": "La Stratégie SNAP",
-        "mecanisme_texte": "Stop, Notice (Remarquer), Align (Aligner avec valeurs), Process (Agir). Outil pour briser l'impulsion.",
+        "mecanisme_texte": "Stop (arrêtez-vous dans le comportement impulsif), Noter (Remarquer ce qui se passe autour de vous et en vous, ce qui déclanche votre réaction), Aligner (Aligner vos actions avec vos objectif et valeurs), Processer (Agissez conformement à vos valeurs et objectifs). Outil pour briser l'impulsion.",
         "actions_therapeute": ["Utilisez la méthode SNAP.", "Fixez des micro-objectifs réalisables.", "Enlevez les distractions."],
         "action_pastorale": "La méthode des 10 minutes : Quand vous voulez abandonner une tâche ou céder à une impulsion, tenez 10 min de plus en priant. C'est un muscle spirituel à exercer.",
         "verset": "Proverbes 25:28 - « Comme une ville forcée et sans murailles, ainsi est l'homme qui n'est pas maître de lui-même. »"
@@ -267,7 +267,7 @@ DATA_SCHEMAS = {
         "mecanisme_titre": "L'Adaptation Excessive",
         "mecanisme_texte": "Le patient pense : 'Si je suis moi-même, on ne m'aimera pas'. Il développe un 'Faux-Self' pour être validé.",
         "actions_therapeute": ["Demandez-vous : 'Qu'est-ce que JE veux ?'.", "Entraînez-vous à exprimer vos préférences.", "Passez du temps seul."],
-        "action_pastorale": "Faites le bien en secret (Matthieu 6). Acceptez un compliment par un simple 'Merci' sans vous en nourrir excessivement ni le rejeter. Votre audience est Dieu seul.",
+        "action_pastorale": "Faites le bien en secret (Matthieu 6). Acceptez un compliment par un simple 'Merci' sans vous en nourrir excessivement ni le rejeter. L'approbation la plus importante est celle de Dieu seul.",
         "verset": "1 Thessaloniciens 2:4 - « Nous parlons, non pour plaire aux hommes, mais pour plaire à Dieu. »"
     },
     "NP": {
